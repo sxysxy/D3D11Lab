@@ -13,33 +13,38 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Common">
-      <UniqueIdentifier>{07d5fca9-85c0-4f8b-a9a6-7eeb96d8006d}</UniqueIdentifier>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{1af215e4-c01a-493d-8c14-78cf02e90f9d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\Common.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="Common.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\D3D11Application.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="D3D11Application.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\D3D11Renderer.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="D3D11Renderer.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\Common.h">
-      <Filter>Common</Filter>
+    <None Include="FirstShader.shader">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Common.h">
+      <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\D3D11Application.h">
-      <Filter>Common</Filter>
+    <ClInclude Include="D3D11Application.h">
+      <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\D3D11Renderer.h">
-      <Filter>Common</Filter>
+    <ClInclude Include="D3D11Renderer.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

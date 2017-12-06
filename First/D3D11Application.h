@@ -3,6 +3,10 @@
 #include "Common.h"
 #include "D3D11Renderer.h"
 
+struct VERTEX {
+    
+};
+
 class D3D11Application {    
 public:
 
@@ -15,6 +19,7 @@ public:
 
     BOOL quit;
 
+    std::function<void()> update;
 private:
 
     void initD3D11();

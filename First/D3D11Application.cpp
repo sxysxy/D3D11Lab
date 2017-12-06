@@ -26,7 +26,7 @@ void D3D11Application::init(wchar_t *title, int w, int h) {
     };
     wc.lpszClassName = _T("D3D11Application");
     wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    assert(RegisterClass(&wc));
+    RCHECK(RegisterClass(&wc) != 0, _T("×¢²á´°¿ÚÀàÊ§°Ü"));
 
     rect.right = w, rect.bottom = h;
     UINT wstyle = WS_OVERLAPPEDWINDOW &~ (WS_THICKFRAME | WS_MAXIMIZEBOX);
@@ -40,17 +40,6 @@ void D3D11Application::init(wchar_t *title, int w, int h) {
     UpdateWindow(hWnd);
 
     initD3D11();
-    MSG msg;
-    while (!quit) {
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-            if(msg.message == WM_QUIT)quit = true;
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            render();
-        }
-    }
 }
 
 void D3D11Application::initD3D11() {
@@ -62,5 +51,24 @@ FLOAT backColor[] = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 void D3D11Application::render() {
     renderer->clear();
-    renderer->present(1);
+    if(update)update();
+    renderer->present(0);
+}
+
+void D3D11Application::mainloop() {
+    MSG msg;
+    while (!quit) {
+        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT)quit = true;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        else {
+            render();
+        }
+    }
+}
+
+void D3D11Application::terminate() {
+    quit = true;
 }

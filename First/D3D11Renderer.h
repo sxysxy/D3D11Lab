@@ -13,8 +13,30 @@ public:
     D3D11_VIEWPORT screenViewport;
     D3D_DRIVER_TYPE d3dDriverType;
 
+    //...
+    ID3D11InputLayout *inputLayout;
+    ID3D11VertexShader *vs;
+    ID3D11PixelShader *ps;
+    ID3D11Buffer *vb;
+
+    
+    struct VERTEX {
+        struct {
+            float x, y, z;
+        }position;
+        struct {
+            float r, g, b, a;
+        }color;
+    };
+   
+
     void init(HWND hWnd);
     void __fastcall clear();
 
     void __fastcall present(int level);  //vsync level 0~4
+
+private:
+
+    void initPipeline();
+    void initGraphics();
 };

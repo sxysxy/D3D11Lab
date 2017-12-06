@@ -6,14 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "First", "First\First.vcxproj", "{7D75A034-2C69-4E06-AED4-88F75229FD62}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{4CED17B4-4F84-43A2-863B-DD7022B73AF0}"
-	ProjectSection(SolutionItems) = preProject
-		Common\Common.cpp = Common\Common.cpp
-		Common\Common.h = Common\Common.h
-		Common\D3D11Application.cpp = Common\D3D11Application.cpp
-		Common\D3D11Application.h = Common\D3D11Application.h
-		Common\D3D11Renderer.cpp = Common\D3D11Renderer.cpp
-		Common\D3D11Renderer.h = Common\D3D11Renderer.h
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

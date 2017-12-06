@@ -11,14 +11,18 @@
 #include <ctype.h>
 #include <algorithm>
 #include <vector>
+#include <functional>
 #include <queue>
 #include <DirectXMath.h>
+#include <DirectXMathVector.inl>
+#include <D3DX11.h>
+#include <wrl/client.h>
+#include <xinput.h>
+#include <memory>
+template<
+    typename T
+> using ComPtr = Microsoft::WRL::ComPtr<T>;
 using namespace DirectX;
-
-inline void releaseCom(IUnknown **com) {
-   if(*com)(*com)->Release();
-   *com = nullptr;
-}
 
 struct Color32 {
     union {
@@ -37,3 +41,5 @@ struct Color32 {
         rgba.r = _r, rgba.g = _g, rgba.b = _b, rgba.a = _a;
     }
 };
+
+#define RCHECK(x, msg) if(!(x)){MessageBoxW(0, msg, L"Error", 0); exit(0);}
