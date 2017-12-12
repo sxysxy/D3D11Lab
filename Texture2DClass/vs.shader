@@ -1,10 +1,9 @@
-cbuffer TextureParam
-{
-    float posx;
-    float posy;
-    float width;
-    float height;
+/*
+cbuffer Params {
+    float width, height;
+    float posx, posy;
 };
+*/
 
 struct vs_input {
     float2 pos : POSITION;
@@ -16,10 +15,10 @@ struct ps_input {
 };
 ps_input main(vs_input input) {
     ps_input output = (ps_input)0;
-    output.pos.x = input.pos.x * 2.f / width - 1.f + posx;
-    output.pos.y = 1.f - input.pos.y * 2.f / height + posy;
-    output.pos.z = 1.f;
-    output.pos.w = 1.f;
+    output.pos.x = input.pos.x * 2.0f - 1.0f;
+    output.pos.y = 1.0f - input.pos.y * 2.0f;
+    output.pos.z = 1.0f;
+    output.pos.w = 1.0f;
     output.tex = input.tex;
     return output;
 }

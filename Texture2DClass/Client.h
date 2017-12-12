@@ -23,11 +23,10 @@ public:
     ~Client();
 
     void Initialize();
-    void Mainloop();
+    void Mainloop(const std::function<void(Renderer *renderer)> &callback);
 private:
 
     void InitWindow();
     
-    void InitD3D();
    
 };

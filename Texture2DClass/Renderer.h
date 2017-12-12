@@ -15,9 +15,15 @@ public:
    ComPtr<ID3D11Buffer> vertex_buffer;
    ComPtr<ID3D11InputLayout> input_layout;
    ComPtr<ID3D11RenderTargetView> render_target_view;
-   D3D11_VIEWPORT screen_viewport;
+   ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+   bool vsync;
 
    void Initialize();
    void Start();
    void Terminate();
+
+   void Resize(int w, int h);
+
+   void Clear();
+   void Present();
 };

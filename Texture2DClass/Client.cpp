@@ -9,7 +9,7 @@ void Client::Initialize() {
 Client::~Client() {
     g_renderer.Terminate();
 }
-void Client::Mainloop() {
+void Client::Mainloop(const std::function<void(Renderer *renderer)> &callback) {
     MSG msg;
     while (!quit) {
         if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -18,7 +18,7 @@ void Client::Mainloop() {
             DispatchMessage(&msg);
         }
         else {
-
+            callback(&g_renderer);
         }
     }
 }
@@ -49,6 +49,7 @@ void Client::InitWindow() {
     AdjustWindowRect(&crect, wstyle, false);
     _hWnd = CreateWindow(L"23333", title.c_str(), wstyle, 220, 233, crect.right-crect.left, crect.bottom-crect.top,
                                     0, 0, hInstance, 0);
+    g_hMainwindow = hWnd;
     ShowWindow(hWnd, SW_NORMAL);
     UpdateWindow(hWnd);
 }
