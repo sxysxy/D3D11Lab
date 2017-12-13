@@ -2,7 +2,10 @@
 #include "stdafx.h"
 
 class Renderer {
+   int _width, _height;
 public:
+
+   const int &width = _width, &height = _height;
 
    std::thread render_thread;
    BOOL quit;
@@ -16,6 +19,7 @@ public:
    ComPtr<ID3D11InputLayout> input_layout;
    ComPtr<ID3D11RenderTargetView> render_target_view;
    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+   ComPtr<ID3D11Buffer> vertex_shader_cbuffer;
    bool vsync;
 
    void Initialize();

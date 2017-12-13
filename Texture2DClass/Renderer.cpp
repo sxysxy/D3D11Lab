@@ -85,6 +85,15 @@ void Renderer::Initialize() {
         context->VSSetShader(vertex_shader.Get(), 0, 0);
         context->PSSetShader(pixel_shader.Get(), 0, 0);
         context->IASetInputLayout(input_layout.Get());
+        //VS Shader's Constant Buffer
+        D3D11_BUFFER_DESC desc;
+        RtlZeroMemory(&desc, sizeof desc);
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        desc.ByteWidth = 32;
+        RCHECK(SUCCEEDED(device->CreateBuffer(&desc, nullptr, &vertex_shader_cbuffer)), 
+                L"创建顶点着色器常量缓冲区失败emm");
+        context->VSSetConstantBuffers(0, 1, vertex_shader_cbuffer.GetAddressOf());
     }
 
     //PS Sampler
@@ -164,6 +173,8 @@ void Renderer::Resize(int w, int h) {
     viewport.MaxDepth = 1.0f;
     viewport.MinDepth = 0.0f;
     context->RSSetViewports(1, &viewport);
+
+    _width = w, _height = h;
 }
 
 void Renderer::Clear() {

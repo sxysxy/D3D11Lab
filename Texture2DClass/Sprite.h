@@ -12,7 +12,16 @@ class Sprite {
         DirectX::XMFLOAT2 tex;
     }vecs[6];
 
+    struct ShaderParam {
+        float width, height;
+        float posx, posy;
+    };
+
+
 public:
+    int x, y;
+    float zoomx, zoomy;
+
     Texture2D *texture;
 
     Sprite() {}

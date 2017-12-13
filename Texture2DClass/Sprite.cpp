@@ -3,7 +3,8 @@
 
 Sprite::Sprite(Texture2D *tex) {
     texture = tex;
-
+    zoomx = zoomy = 1.0f;
+    x = y = 0;
     static Vertex inital[] = {
         { { 1.0f, 1.0f},{ 1.0f, 1.0f } },
         { { 0.0f, 0.0f},{ 0.0f, 0.0f } },
@@ -27,6 +28,11 @@ Sprite::Sprite(Texture2D *tex) {
 
 void Sprite::Render() {
     g_renderer.context->PSSetShaderResources(0, 1, texture->shader_resource_view.GetAddressOf());
+    ShaderParam param = { zoomx * texture->width / g_renderer.width, zoomy *texture->height / g_renderer.height, 
+        2.0f * x / g_renderer.width, 2.0f * y / g_renderer.height };
+    g_renderer.context->UpdateSubresource(g_renderer.vertex_shader_cbuffer.Get(), 0, 0, 
+        &param,
+        0, 0);
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     g_renderer.context->IASetVertexBuffers(0, 1, vertex_buffer.GetAddressOf(), &stride, &offset);
