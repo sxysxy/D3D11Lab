@@ -11,7 +11,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     client.Initialize();
     Texture2D texture(L"250px-Yukari.jpg");
     Sprite sprite(&texture);
-    bool flag = false;
+    int flag = 0;
+    int wait = 0;
+
     client.Mainloop([&](Renderer *renderer) {
         renderer->vsync = true; //´¹Ö±Í¬²½
         renderer->Clear();
@@ -22,12 +24,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         if(!flag && sprite.x < 250){
             sprite.x += 1;
             sprite.y += 1;
-            if(sprite.x == 250)flag = true;
+            if(sprite.x == 250)flag = 1;
         }
-        else {
+        else if(flag == 1){
             sprite.x = 0;
             sprite.y = 0;
             sprite.zoomx = sprite.zoomy = 2.0f;
+            wait++;
+            if (wait == 180) {
+                flag = 2;
+                wait = 0;
+            }
+        }
+        else {
+            sprite.ox = 250;
+            sprite.oy = 250;
+            
+            if (wait < 180) {
+                sprite.angle = acos(-1) / (180 - wait);
+                wait++;
+            }
+            
         }
     });
     return 0;

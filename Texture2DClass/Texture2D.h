@@ -9,7 +9,7 @@ class Texture2D {
 public:
     ComPtr<ID3D11Texture2D> texture;
     ComPtr<ID3D11ShaderResourceView> shader_resource_view;
-    //ComPtr<ID3D11RenderTargetView> render_target_view;  //暂时不需要Render to texture
+    ComPtr<ID3D11RenderTargetView> render_target_view;  //暂时不需要Render to texture
 
     const int &width = _width, &height = _height;
 

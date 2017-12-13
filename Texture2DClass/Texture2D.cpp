@@ -4,7 +4,7 @@
 Texture2D::Texture2D(const wstring &filename) {
     D3DX11_IMAGE_LOAD_INFO info;
     RtlZeroMemory(&info, sizeof(info));
-    info.BindFlags = D3D11_BIND_SHADER_RESOURCE /*| D3D11_BIND_RENDER_TARGET*/;
+    info.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     info.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     info.MipLevels = D3DX11_DEFAULT;
     info.MipFilter = D3DX11_FILTER_LINEAR;
@@ -16,4 +16,7 @@ Texture2D::Texture2D(const wstring &filename) {
     _height = desc.Height;
     RCHECK(SUCCEEDED(g_renderer.device->CreateShaderResourceView(reinterpret_cast<ID3D11Resource*>(texture.Get()), 
         nullptr, &shader_resource_view)), L"创建ShaderResourceView失败");
+    RCHECK(SUCCEEDED(g_renderer.device->CreateRenderTargetView(reinterpret_cast<ID3D11Resource*>(texture.Get()),
+        nullptr, &render_target_view)), L"创建RenderTargetView失败");
+
 }

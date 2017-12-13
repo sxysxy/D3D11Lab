@@ -90,7 +90,7 @@ void Renderer::Initialize() {
         RtlZeroMemory(&desc, sizeof desc);
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        desc.ByteWidth = 32;
+        desc.ByteWidth = 64;
         RCHECK(SUCCEEDED(device->CreateBuffer(&desc, nullptr, &vertex_shader_cbuffer)), 
                 L"创建顶点着色器常量缓冲区失败emm");
         context->VSSetConstantBuffers(0, 1, vertex_shader_cbuffer.GetAddressOf());

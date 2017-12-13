@@ -15,12 +15,15 @@ class Sprite {
     struct ShaderParam {
         float width, height;
         float posx, posy;
+
+        float ox, oy, sina, cosa;
     };
 
 
 public:
-    int x, y;
+    int x, y, ox, oy;
     float zoomx, zoomy;
+    float angle;
 
     Texture2D *texture;
 

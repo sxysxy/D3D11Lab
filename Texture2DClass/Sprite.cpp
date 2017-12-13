@@ -4,7 +4,8 @@
 Sprite::Sprite(Texture2D *tex) {
     texture = tex;
     zoomx = zoomy = 1.0f;
-    x = y = 0;
+    x = y = ox = oy = 0;
+    angle = 0;
     static Vertex inital[] = {
         { { 1.0f, 1.0f},{ 1.0f, 1.0f } },
         { { 0.0f, 0.0f},{ 0.0f, 0.0f } },
@@ -28,8 +29,10 @@ Sprite::Sprite(Texture2D *tex) {
 
 void Sprite::Render() {
     g_renderer.context->PSSetShaderResources(0, 1, texture->shader_resource_view.GetAddressOf());
-    ShaderParam param = { zoomx * texture->width / g_renderer.width, zoomy *texture->height / g_renderer.height, 
-        2.0f * x / g_renderer.width, 2.0f * y / g_renderer.height };
+    ShaderParam param = {   zoomx * texture->width / g_renderer.width,   //width
+                            zoomy * texture->height / g_renderer.height,  //height
+        2.0f * x / g_renderer.width, 2.0f * y / g_renderer.height,       //x, y
+        2.0f * ox / g_renderer.width,  2.0f * oy / g_renderer.height, sin(angle), cos(angle) };  //rotation
     g_renderer.context->UpdateSubresource(g_renderer.vertex_shader_cbuffer.Get(), 0, 0, 
         &param,
         0, 0);

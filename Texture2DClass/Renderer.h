@@ -20,6 +20,7 @@ public:
    ComPtr<ID3D11RenderTargetView> render_target_view;
    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
    ComPtr<ID3D11Buffer> vertex_shader_cbuffer;
+
    bool vsync;
 
    void Initialize();
