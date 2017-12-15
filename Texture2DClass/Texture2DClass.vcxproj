@@ -158,6 +158,7 @@
     <ClInclude Include="Client.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Texture2D.h" />
@@ -167,13 +168,16 @@
     <ClCompile Include="global.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ps.shader" />
-    <None Include="vs.shader" />
+    <None Include="rtt_ps.shader" />
+    <None Include="rtt_vs.shader" />
+    <None Include="texture_ps.shader" />
+    <None Include="texture_vs.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

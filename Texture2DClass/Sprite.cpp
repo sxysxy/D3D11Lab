@@ -32,7 +32,7 @@ void Sprite::Render() {
     ShaderParam param = {   zoomx * texture->width / g_renderer.width,   //width
                             zoomy * texture->height / g_renderer.height,  //height
         2.0f * x / g_renderer.width, 2.0f * y / g_renderer.height,       //x, y
-        2.0f * ox / g_renderer.width,  2.0f * oy / g_renderer.height, sin(angle), cos(angle) };  //rotation
+        sin(angle), cos(angle) };  //rotation
     g_renderer.context->UpdateSubresource(g_renderer.vertex_shader_cbuffer.Get(), 0, 0, 
         &param,
         0, 0);

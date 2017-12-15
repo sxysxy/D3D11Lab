@@ -24,7 +24,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         if(!flag && sprite.x < 250){
             sprite.x += 1;
             sprite.y += 1;
-            if(sprite.x == 250)flag = 1;
+            if(sprite.x ==250)flag = 1;
         }
         else if(flag == 1){
             sprite.x = 0;
@@ -36,13 +36,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                 wait = 0;
             }
         }
-        else {
-            sprite.ox = 250;
-            sprite.oy = 250;
-            
-            if (wait < 180) {
-                sprite.angle = acos(-1) / (180 - wait);
-                wait++;
+        else if(flag == 2){
+            wait++;
+            if (wait < 360) {
+                sprite.angle = (float)acos(-1) / (180 - wait/2);
+                
+            }
+            if (wait == 500) {
+                renderer->SetTargetTexture(&texture);
+                
+                renderer->SetTargetTexture(nullptr);
             }
             
         }

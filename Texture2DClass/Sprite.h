@@ -16,7 +16,7 @@ class Sprite {
         float width, height;
         float posx, posy;
 
-        float ox, oy, sina, cosa;
+        float sina, cosa;
     };
 
 

@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "global.h"
 #include "Renderer.h"
+#include "Texture2D.h"
+#include "Shader.h"
 
 void Renderer::Initialize() {
     quit = false;
     vsync = false;
+    render_target_texture = nullptr;
 
     RECT rect;
     GetClientRect(g_hMainwindow, &rect);
@@ -47,15 +50,17 @@ void Renderer::Initialize() {
     //Back Buffer and Stencil Buffer
     {
         Resize(rect.right, rect.bottom);
+        current_target_view = render_target_view.Get();
     }
 
     //Shaders
     {
+        
         ComPtr<ID3D10Blob> vs, ps;
 
-        RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("vs.shader"), 0, 0, "main", "vs_4_0", 0, 0, 0, &vs, 0, 0)),
+        RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("texture_vs.shader"), 0, 0, "main", "vs_4_0", 0, 0, 0, &vs, 0, 0)),
             L"编译顶点着色器失败");
-        RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("ps.shader"), 0, 0, "main", "ps_4_0", 0, 0, 0, &ps, 0, 0)),
+        RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("texture_ps.shader"), 0, 0, "main", "ps_4_0", 0, 0, 0, &ps, 0, 0)),
             L"编译像素着色器失败");
 
         D3D11_INPUT_ELEMENT_DESC ipdesc[2];
@@ -94,6 +99,7 @@ void Renderer::Initialize() {
         RCHECK(SUCCEEDED(device->CreateBuffer(&desc, nullptr, &vertex_shader_cbuffer)), 
                 L"创建顶点着色器常量缓冲区失败emm");
         context->VSSetConstantBuffers(0, 1, vertex_shader_cbuffer.GetAddressOf());
+       
     }
 
     //PS Sampler
@@ -141,28 +147,6 @@ void Renderer::Resize(int w, int h) {
     RCHECK(SUCCEEDED(device->CreateRenderTargetView(back_buffer.Get(), 0, &render_target_view)), 
         L"创建主RenderTargetView失败");
     
-    //stencil buffer
-    /*
-    D3D11_TEXTURE2D_DESC desc;
-    RtlZeroMemory(&desc, sizeof(desc));
-    desc.Width = rect.right;
-    desc.Height = rect.bottom;
-    desc.MipLevels = 1;
-    desc.ArraySize = 1;
-    desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    desc.SampleDesc.Count = 1;
-    desc.SampleDesc.Quality = 0;
-    desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    desc.MiscFlags = 0;
-
-    ComPtr<ID3D11Texture2D> stencil_buffer;
-    RCHECK(SUCCEEDED(device->CreateTexture2D(&desc, nullptr, 
-                &stencil_buffer)), L"创建深度缓存失败")
-    device->CreateDepthStencilView(stencil_buffer.Get(), 
-        0, depth_stencil_view.ReleaseAndGetAddressOf());
-    context->OMSetRenderTargets(1, render_target_view.GetAddressOf(), depth_stencil_view.Get());
-    */
     context->OMSetRenderTargets(1, render_target_view.GetAddressOf(), 0);
 
     D3D11_VIEWPORT viewport;
@@ -179,9 +163,41 @@ void Renderer::Resize(int w, int h) {
 
 void Renderer::Clear() {
     const FLOAT black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    context->ClearRenderTargetView(render_target_view.Get(), black);
-    context->ClearDepthStencilView(depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    context->ClearRenderTargetView(current_target_view, black);
 }
 void Renderer::Present() {
     swap_chain->Present(vsync?1:0, 0);
+}
+
+Texture2D *Renderer::GetTargetTexture() {
+    return render_target_texture;
+}
+
+void Renderer::SetTargetTexture(Texture2D *tex) {
+    D3D11_VIEWPORT viewport;
+    if (!tex) {
+        current_target_view = render_target_view.Get();
+        viewport.TopLeftX = 0;
+        viewport.TopLeftY = 0;
+        viewport.Width = g_renderer.width;
+        viewport.Height = g_renderer.height;
+        viewport.MaxDepth = 1.0f;
+        viewport.MinDepth = 0.0f;
+        context->RSSetViewports(1, &viewport);
+    }
+    else {
+        render_target_texture = tex;
+        current_target_view = render_target_texture->render_target_view.Get();
+        viewport.TopLeftX = 0;
+        viewport.TopLeftY = 0;
+        viewport.Width = tex->width;
+        viewport.Height = tex->height;
+        viewport.MaxDepth = 1.0f;
+        viewport.MinDepth = 0.0f;
+        context->RSSetViewports(1, &viewport);
+    }
+}
+
+void Renderer::DrawRect(const Rect &rect, const Color &color){
+    
 }
