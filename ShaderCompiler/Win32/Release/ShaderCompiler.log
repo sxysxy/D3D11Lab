@@ -1,8 +1,0 @@
-﻿  stdafx.cpp
-  ShaderCompiler.cpp
-ShaderCompiler.cpp(44): warning C4996: '_wfopen': This function or variable may be unsafe. Consider using _wfopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\ucrt\corecrt_wstdio.h(130): note: 参见“_wfopen”的声明
-  正在生成代码
-  All 16 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-  已完成代码的生成
-  ShaderCompiler.vcxproj -> E:\D3D11\D3D11Lab\\ShaderCompiler\Win32\Release\sdc.exe
