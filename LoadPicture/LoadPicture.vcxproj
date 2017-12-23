@@ -155,11 +155,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="LoadPicture.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="ps.shader" />
     <None Include="vs.shader" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LoadPicture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
