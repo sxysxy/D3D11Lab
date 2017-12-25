@@ -10,6 +10,9 @@ Client::~Client() {
     renderer.Terminate();
 }
 void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
+
+	renderer.Mainloop();
+
     MSG msg;
     while (!quit) {
         if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {

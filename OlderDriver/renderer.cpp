@@ -80,16 +80,26 @@ void Renderer::Resize(int w, int h) {
 }
 
 void Renderer::Mainloop() {
+	
     render_thread = std::thread([this]() {
 
         HMODULE hNtdll = LoadLibraryW(L"ntdll.dll");
         typedef NTSTATUS(__stdcall * pNtDelayExecution) (BOOL, PLARGE_INTEGER);
         pNtDelayExecution NtDelayExecution;
         RCHECK((NtDelayExecution = (pNtDelayExecution)GetProcAddress(hNtdll, "NtDelayExecution")), L"ntdll!NtDelayExecution¼ÓÔØÊ§°Ü");
-        
-        while (phase != RENDERER_TERMINATED) {
-            long long tick = (long long)(-10000000.0 / frame_rate + 0.5);     // unit: 10^-7 s
+		_phase ^= RENDERER_PREPARING;
+
+		long long timer_freq;
+		QueryPerformanceFrequency((PLARGE_INTEGER)&timer_freq);
+
+        while ((phase & RENDERER_TERMINATED) == 0) {
+    
+			auto tick = 1.0 * timer_freq / frame_rate;
+			auto judge = timer_freq;
             long long startt; QueryPerformanceCounter((PLARGE_INTEGER)&startt);
+
+			_phase &= ~(RENDERER_READY);
+			_phase |= RENDERER_RENDERING;
 
             SetDefaultTarget();
             Clear();
@@ -101,17 +111,35 @@ void Renderer::Mainloop() {
                 if(ct.call)ct.call(this);
             }
 
+			_phase ^= RENDERER_RENDERING;
+			_phase |= RENDERER_READY;
+
             if (vsync) {
                 RenderVsync();
-            }else if (frame_rate > 0) {    //controls FPS;
-                RenderImmediately();
-                long long endt; QueryPerformanceCounter((PLARGE_INTEGER)&endt);
-                double d = endt-startt;
-                d = tick - (d * 10000000.0 / timer_freq);
-                long long waitt = (long long)d;
-                NtDelayExecution(false, (PLARGE_INTEGER)&waitt);
+            }else {
+
+				if (frame_rate > 0) {    //controls FPS;
+					long long endt; 
+					long long onems = -1000;
+					while (true) {
+						QueryPerformanceCounter((PLARGE_INTEGER)&endt);
+						long long d = (long long)(tick - endt + startt);  //time left.
+						if (d <= 0)break;
+
+						//long long d = (long long)(endt - startt);  //time in total.
+						//if (d >= tick)break;
+
+						if (d >= 20000) {
+							//NtDelayExecution(false, (PLARGE_INTEGER)&onems);
+							Sleep(1);
+						}
+						else{
+							std::this_thread::yield();
+						}
+					}
+				}
+				RenderImmediately();
             }
-            
         }
     });
 }

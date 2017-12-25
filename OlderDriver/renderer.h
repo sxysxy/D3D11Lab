@@ -8,15 +8,13 @@ struct RenderTask {
     std::function<void(Renderer *renderer)> call;
 };
 
-enum RendererPhase {
-    RENDERER_PREPARING,
-    RENDERER_READY,
-    RENDERER_RENDERING,
-    RENDERER_TERMINATED
-};
+const DWORD RENDERER_PREPARING = 1;
+const DWORD RENDERER_READY = 2;
+const DWORD RENDERER_RENDERING = 4;
+const DWORD RENDERER_TERMINATED = 8;
 
 class Renderer {
-    RendererPhase _phase;
+    DWORD _phase;
     long long timer_freq;
     HWND window;
     int _width, _height;
@@ -25,7 +23,7 @@ class Renderer {
     void RenderVsync();
 
 public:
-    const RendererPhase &phase = _phase;
+    const DWORD &phase = _phase;
     
     const int &width = _width, &height = _height;
 
@@ -43,7 +41,7 @@ public:
     void Resize(int w, int h);
 
     inline void Terminate() {
-        _phase = RENDERER_TERMINATED;
+		_phase |= RENDERER_TERMINATED;
         render_thread.join();
     }
 
