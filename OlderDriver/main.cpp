@@ -3,14 +3,13 @@
 #include "renderer.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow){
-	AllocConsole();
-	freopen("CON", "w", stdout);
+	//AllocConsole();
+	//freopen("CON", "w", stdout);
 
-    Client client(L"Demo", 600, 400);
+    Client client(L"Demo", 600, 600);
     client.Initialize();
-	client.renderer.frame_rate = 60;
-    client.Mainloop([] (Renderer *renderer){
-		Sleep(20);
-	});
+	client.renderer.SetFrameRate(60);
+	client.SetFrameRate(60);
+    client.Mainloop([] (Renderer *renderer){});
     return 0;
 }

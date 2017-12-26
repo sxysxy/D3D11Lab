@@ -2,14 +2,17 @@
 
 Renderer::Renderer() {
     _phase = RENDERER_PREPARING;
-    frame_rate = -1;
+	_frame_rate = -1;
     vsync = false;
-    QueryPerformanceFrequency((PLARGE_INTEGER)&timer_freq);
+	fpsctrl = new FPSCTRL;
+}
+
+Renderer::~Renderer() {
+	delete fpsctrl;
 }
 
 void Renderer::Initialize(HWND hWnd) {
     window = hWnd;
-
 
     RECT rect;
     GetClientRect(window, &rect);
@@ -89,14 +92,9 @@ void Renderer::Mainloop() {
         RCHECK((NtDelayExecution = (pNtDelayExecution)GetProcAddress(hNtdll, "NtDelayExecution")), L"ntdll!NtDelayExecution¼ÓÔØÊ§°Ü");
 		_phase ^= RENDERER_PREPARING;
 
-		long long timer_freq;
-		QueryPerformanceFrequency((PLARGE_INTEGER)&timer_freq);
+		SetFrameRate(frame_rate);
 
         while ((phase & RENDERER_TERMINATED) == 0) {
-    
-			auto tick = 1.0 * timer_freq / frame_rate;
-			auto judge = timer_freq;
-            long long startt; QueryPerformanceCounter((PLARGE_INTEGER)&startt);
 
 			_phase &= ~(RENDERER_READY);
 			_phase |= RENDERER_RENDERING;
@@ -114,49 +112,37 @@ void Renderer::Mainloop() {
 			_phase ^= RENDERER_RENDERING;
 			_phase |= RENDERER_READY;
 
-            if (vsync) {
-                RenderVsync();
-            }else {
+			if (vsync) {
+				RenderVsync();
+				continue;
+			}
 
-				if (frame_rate > 0) {    //controls FPS;
-					long long endt; 
-					long long onems = -1000;
-					while (true) {
-						QueryPerformanceCounter((PLARGE_INTEGER)&endt);
-						long long d = (long long)(tick - endt + startt);  //time left.
-						if (d <= 0)break;
-
-						//long long d = (long long)(endt - startt);  //time in total.
-						//if (d >= tick)break;
-
-						if (d >= 20000) {
-							//NtDelayExecution(false, (PLARGE_INTEGER)&onems);
-							Sleep(1);
-						}
-						else{
-							std::this_thread::yield();
-						}
-					}
-				}
-				RenderImmediately();
-            }
+			RenderImmediately();
+			if (frame_rate <= 0)
+				continue;
+			else fpsctrl->Await();
         }
     });
 }
 
-inline void Renderer::SetDefaultTarget() {
+void Renderer::SetDefaultTarget() {
     current_target = main_target.Get();
 }
 
-inline void Renderer::Clear() {
+void Renderer::Clear() {
     static const FLOAT black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     context->ClearRenderTargetView(current_target, black);
 }
 
-inline void Renderer::RenderImmediately() {
+void Renderer::RenderImmediately() {
     swap_chain->Present(0, 0);
 }
 
-inline void Renderer::RenderVsync() {
+void Renderer::RenderVsync() {
     swap_chain->Present(1, 0);
+}
+
+void Renderer::SetFrameRate(int f) {
+	_frame_rate = f;
+	fpsctrl->Restart(f);
 }

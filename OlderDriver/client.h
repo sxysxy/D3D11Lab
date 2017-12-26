@@ -12,6 +12,8 @@ public:
     const HWND &hWnd = _hWnd;
     Renderer renderer;
 
+	FPSCTRL *fpsctrl;
+
     BOOL quit;
 
     Client(const std::wstring &title_, int w, int h) {
@@ -19,11 +21,15 @@ public:
         width = w;
         height = h;
         quit = false;
+		fpsctrl = new FPSCTRL;
     }
     ~Client();
 
     void Initialize();
     void Mainloop(const std::function<void(Renderer *renderer)> &callback);
+	void SetFrameRate(int r) {
+		fpsctrl->Restart(r);
+	}
 private:
 
     void InitWindow();

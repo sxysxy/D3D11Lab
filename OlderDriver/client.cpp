@@ -8,6 +8,7 @@ void Client::Initialize() {
 }
 Client::~Client() {
     renderer.Terminate();
+	delete fpsctrl;
 }
 void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
 
@@ -22,6 +23,7 @@ void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
         }
         else {
             callback(&renderer);
+			fpsctrl->Await();
         }
     }
 }
@@ -50,7 +52,13 @@ void Client::InitWindow() {
     UINT wstyle = WS_OVERLAPPEDWINDOW &~(WS_THICKFRAME | WS_MAXIMIZEBOX);
     RECT crect = { 0, 0, width, height };
     AdjustWindowRect(&crect, wstyle, false);
-    _hWnd = CreateWindow(L"23333", title.c_str(), wstyle, 220, 233, crect.right - crect.left, crect.bottom - crect.top,
+	
+	int cw = crect.right - crect.left;
+	int ch = crect.bottom - crect.top;
+    _hWnd = CreateWindow(L"23333", title.c_str(), wstyle, 
+		(GetSystemMetrics(SM_CXSCREEN) - cw) >> 1, 
+		(GetSystemMetrics(SM_CYSCREEN) - ch) >> 1, 
+	    cw, ch,
         0, 0, hInstance, 0);
     ShowWindow(hWnd, SW_NORMAL);
     UpdateWindow(hWnd);
