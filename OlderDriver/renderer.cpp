@@ -1,10 +1,13 @@
 #include "renderer.h"
+#include "shaders.h"
+#include "stdafx.h"
 
 Renderer::Renderer() {
     _phase = RENDERER_PREPARING;
 	_frame_rate = -1;
     vsync = false;
 	fpsctrl = new FPSCTRL;
+	task_tim = 0;
 }
 
 Renderer::~Renderer() {
@@ -57,10 +60,8 @@ void Renderer::Initialize(HWND hWnd) {
 }
 
 void Renderer::Resize(int w, int h) {
-    RECT rect;
-    GetClientRect(window, &rect);
 
-    swap_chain->ResizeBuffers(1, rect.right, rect.bottom,
+    swap_chain->ResizeBuffers(1, w, h,
         DXGI_FORMAT_R8G8B8A8_UNORM, 0);
     ComPtr<ID3D11Texture2D> back_buffer;
     swap_chain->GetBuffer(0,
@@ -69,16 +70,8 @@ void Renderer::Resize(int w, int h) {
         L"创建主RenderTargetView失败");
 
     context->OMSetRenderTargets(1, main_target.GetAddressOf(), 0);
-
-    D3D11_VIEWPORT viewport;
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = (float)rect.right;
-    viewport.Height = (float)rect.bottom;
-    viewport.MaxDepth = 1.0f;
-    viewport.MinDepth = 0.0f;
-    context->RSSetViewports(1, &viewport);
-
+	
+	SetViewport({ 0, 0, w, h });
     _width = w, _height = h;
 }
 
@@ -118,6 +111,7 @@ void Renderer::Mainloop() {
 			}
 
 			RenderImmediately();
+			task_tim++;
 			if (frame_rate <= 0)
 				continue;
 			else fpsctrl->Await();
@@ -145,4 +139,90 @@ void Renderer::RenderVsync() {
 void Renderer::SetFrameRate(int f) {
 	_frame_rate = f;
 	fpsctrl->Restart(f);
+}
+
+void Renderer::BindPipeline(RenderPipeline *pipeline){
+	BindVertexShader(&pipeline->vshader);
+	BindPixelShader(&pipeline->pshader);
+	g_renderer->context->IASetInputLayout(pipeline->input_layout.Get());
+}
+
+void Renderer::BindVertexShader(VertexShader *shader){
+	context->VSSetShader(shader->shader.Get(), 0, 0);
+}
+
+void Renderer::BindPixelShader(PixelShader *shader){
+	context->PSSetShader(shader->shader.Get(), 0, 0);
+	context->PSSetSamplers(0, 1, shader->sampler.GetAddressOf());
+}
+
+void Renderer::PushTask(const std::function<void(Renderer *renderer)> &f) {
+	if (mtx_push_task.try_lock()) {
+		tasks.push({ f, task_tim});
+		mtx_push_task.unlock();
+	}
+}
+
+void Renderer::SetViewport(const RECT &rect) {
+	D3D11_VIEWPORT viewport;
+	viewport.TopLeftX = rect.left;
+	viewport.TopLeftY = rect.top;
+	viewport.Width = (float)(rect.right - rect.left);
+	viewport.Height = (float)(rect.bottom - rect.top);
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
+	context->RSSetViewports(1, &viewport);
+}
+
+namespace Renderer2D {
+	RenderPipeline render_texture2d_pipeline;
+	RenderPipeline render_shape2d_pipeline;
+
+	void CreatePipelines() {
+		render_shape2d_pipeline.vshader.Create(L"render_vs.bin");
+		render_shape2d_pipeline.pshader.Create(L"render_ps.bin");
+		render_shape2d_pipeline.SetInputLayout(
+			std::initializer_list<std::string>({ "POSITION", "COLOR" }).begin(),
+			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT }).begin(),
+			2);
+
+		render_texture2d_pipeline.vshader.Create(L"texture_vs.bin");
+		render_texture2d_pipeline.pshader.Create(L"texture_ps.bin");
+		render_texture2d_pipeline.SetInputLayout(
+			std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
+			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
+			2);
+	}
+	void DrawRect(Renderer *renderer, float position[4][2], float colors[4][4]) {
+
+		struct TTTT{
+			DirectX::XMFLOAT3 position;
+			DirectX::XMFLOAT4 color;
+		}vecs[4] = {
+			{{ position[0][0], position[0][1], 0}, { colors[0][0], colors[0][1], colors[0][2], colors[0][3] }}, 
+			{{ position[1][0], position[1][1], 0}, { colors[1][0], colors[1][1], colors[1][2], colors[1][3] }}, 
+			{{ position[2][0], position[2][1], 0}, { colors[2][0], colors[2][1], colors[2][2], colors[2][3] }},
+			{{ position[3][0], position[3][1], 0}, { colors[3][0], colors[3][1], colors[3][2], colors[3][3] }}
+		};
+
+		ComPtr<ID3D11Buffer> vbuffer;
+		D3D11_BUFFER_DESC bd;
+		RtlZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.ByteWidth = sizeof(vecs);
+		D3D11_SUBRESOURCE_DATA data;
+		RtlZeroMemory(&data, sizeof data);
+		
+		data.pSysMem = vecs;
+		if (FAILED(renderer->device->CreateBuffer(&bd, &data, &vbuffer))) {
+			throw std::runtime_error("创建顶点缓冲失败");
+		}
+
+		UINT stride = sizeof(TTTT);
+		UINT offset = 0;
+		renderer->context->IASetVertexBuffers(0, 1, vbuffer.GetAddressOf(), &stride, &offset);
+		renderer->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		renderer->context->Draw(4, 0);
+	}
 }

@@ -157,6 +157,7 @@ void D3D11Renderer::initPipeline() {
  //   d3dDevice->CreateInputLayout(ied, 2, 
   //              pvsc.get(), vss, &inputLayout);
     d3dimmContext->IASetInputLayout(inputLayout);
+	
 }
 
 void D3D11Renderer::initGraphics() {
@@ -170,7 +171,7 @@ void D3D11Renderer::initGraphics() {
             y += 1.0f;
         }
         x += 1.0f;
-    }
+    }//{-0.5, -0.5}, {-0.5, 0.5}, {0.5, -0.5}{0.5, 0.5}
 
     D3D11_BUFFER_DESC bd;
     RtlZeroMemory(&bd, sizeof(bd));

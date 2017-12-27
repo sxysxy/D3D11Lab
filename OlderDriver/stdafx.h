@@ -17,6 +17,14 @@
 #include <DirectXMath.h>
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <mutex>
+#include <functional>
+#include <algorithm>
+#include <set>
+#include <map>
+#include <deque>
+#include <wincodec.h>
+#include <mmsystem.h>
 template<typename T>using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 #define RCHECK(x, msg) if(!(x)){MessageBoxW(0, msg, L"Error", 0); exit(0);}

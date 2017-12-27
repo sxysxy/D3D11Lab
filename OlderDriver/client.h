@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "renderer.h"
+#include "global.h"
 
 class Client {
     HWND _hWnd;
@@ -22,6 +23,8 @@ public:
         height = h;
         quit = false;
 		fpsctrl = new FPSCTRL;
+
+		g_renderer = &renderer;
     }
     ~Client();
 

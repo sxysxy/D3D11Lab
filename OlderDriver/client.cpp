@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Client.h"
+#include "global.h"
 
 void Client::Initialize() {
     hInstance = GetModuleHandle(0);
@@ -14,18 +15,21 @@ void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
 
 	renderer.Mainloop();
 
-    MSG msg;
-    while (!quit) {
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-            if (msg.message == WM_QUIT)quit = true;
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            callback(&renderer);
+	std::thread f = std::thread([&](){
+		while (!quit) {
+			callback(&renderer);
 			fpsctrl->Await();
-        }
-    }
+		}
+	});
+
+	MSG msg;
+	while (GetMessage(&msg, 0, 0, 0)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	quit = true;
+	f.join();
 }
 
 void Client::InitWindow() {

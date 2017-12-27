@@ -1,6 +1,8 @@
 #pragma once
 
 #include "stdafx.h"
+#include "shaders.h"
+
 
 struct FPSCTRL {
 	long long time;
@@ -35,6 +37,7 @@ class Renderer;
 
 struct RenderTask {
     std::function<void(Renderer *renderer)> call;
+	int tim;
 };
 
 const DWORD RENDERER_PREPARING = 1;
@@ -51,6 +54,14 @@ class Renderer {
     void RenderVsync();
 	int _frame_rate;
 	FPSCTRL *fpsctrl;
+
+	void BindVertexShader(VertexShader *shader);
+	void BindPixelShader(PixelShader *shader);
+
+	
+
+	std::mutex mtx_push_task;
+	int task_tim;
 
 public:
     const DWORD &phase = _phase;
@@ -78,7 +89,11 @@ public:
     }
 	void SetFrameRate(int f);
 
+	void BindPipeline(RenderPipeline *pipeline);
 
+	void PushTask(const std::function<void(Renderer *renderer)> &f);
+
+	void SetViewport(const RECT &rect);
     //---D3D layer, Pretends to be private:
     ComPtr<ID3D11Device> device;
     ComPtr<ID3D11DeviceContext> context;
@@ -86,3 +101,12 @@ public:
     ComPtr<ID3D11RenderTargetView> main_target;  //main(background) render target view;
     ID3D11RenderTargetView *current_target;      //current target.
 };
+
+namespace Renderer2D {
+	extern RenderPipeline render_texture2d_pipeline;
+	extern RenderPipeline render_shape2d_pipeline;
+
+	void CreatePipelines();
+
+	void DrawRect(Renderer *renderer, float position[4][2], float colors[4][4]);
+}
