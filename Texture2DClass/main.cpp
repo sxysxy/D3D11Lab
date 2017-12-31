@@ -9,7 +9,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                                         LPSTR lpCmd, int nCmd) {
     Client client(L"我就是叫紫妈怎么了alsdkjaeiovfakdlajsdl", 500, 500);
     client.Initialize();
-    Texture2D texture(L"250px-Yukari.jpg");
+    Texture2D texture(L"../CommonFiles/250px-Yukari.jpg");
     Sprite sprite(&texture);
     int flag = 0;
     int wait = 0;

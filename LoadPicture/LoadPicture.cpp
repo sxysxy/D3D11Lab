@@ -131,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     loadInfo.MipLevels = D3DX11_DEFAULT;
     loadInfo.MipFilter = D3DX11_FILTER_LINEAR;
     ComPtr<ID3D11Texture2D> texture;
-    RCHECK(SUCCEEDED(D3DX11CreateTextureFromFile(engine.device, L"test.png", &loadInfo, 0,
+    RCHECK(SUCCEEDED(D3DX11CreateTextureFromFile(engine.device, L"../CommonFiles/test.png", &loadInfo, 0,
         reinterpret_cast<ID3D11Resource**>(texture.GetAddressOf()), 0)), L"¼ÓÔØÎÆÀíÊ§°Ü!");
     D3D11_TEXTURE2D_DESC texdesc;
     texture->GetDesc(&texdesc);

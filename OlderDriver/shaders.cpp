@@ -15,12 +15,18 @@ void Shader::Create(const std::wstring &filename) {
 }
 
 void Shader::CreateConstantBuffer(int size) {
+	if (size % 16) {
+		throw std::invalid_argument("常量缓冲区大小必须为16的整数倍");
+	}
+
 	D3D11_BUFFER_DESC bd;
 	RtlZeroMemory(&bd, sizeof bd);
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bd.ByteWidth = (size / 16 + 1) * 16;
-	g_renderer->device->CreateBuffer(&bd, nullptr, &cbuffer);
+	bd.ByteWidth = size;
+	if (FAILED(g_renderer->device->CreateBuffer(&bd, nullptr, &cbuffer))) {
+		throw std::runtime_error("创建常量缓冲区失败!");
+	}
 }
 
 void Shader::FlushConstantBuffer(void *ptr){

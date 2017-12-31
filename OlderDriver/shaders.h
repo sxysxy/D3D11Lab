@@ -5,7 +5,7 @@
 class Renderer;
 
 class Shader {
-	
+
 	virtual void CreateShaderFromBinary(char *, int) = 0;
 
 public:

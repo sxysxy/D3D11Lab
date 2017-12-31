@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "shaders.h"
+class Bitmap;
 
 
 struct FPSCTRL {
@@ -58,10 +59,9 @@ class Renderer {
 	void BindVertexShader(VertexShader *shader);
 	void BindPixelShader(PixelShader *shader);
 
-	
-
 	std::mutex mtx_push_task;
 	int task_tim;
+	bool preempted;
 
 public:
     const DWORD &phase = _phase;
@@ -70,18 +70,22 @@ public:
 	const int &frame_rate = _frame_rate;
 
     std::thread render_thread;
-
-    bool vsync;
-
+	std::mutex sync_mutex;
+	bool vsync;
     std::queue<RenderTask> tasks;
+
+	RenderPipeline *render_pipeline;
 
     Renderer();
 	~Renderer();
     void Initialize(HWND hWnd);
     void Mainloop();
     void SetDefaultTarget();
+	void SetRenderTarget(Bitmap *bmp);
     void Clear();
     void Resize(int w, int h);
+	void Preempt();
+	void PreemptDisable();
 
     inline void Terminate() {
 		_phase |= RENDERER_TERMINATED;
@@ -94,6 +98,8 @@ public:
 	void PushTask(const std::function<void(Renderer *renderer)> &f);
 
 	void SetViewport(const RECT &rect);
+
+	RECT viewport;
     //---D3D layer, Pretends to be private:
     ComPtr<ID3D11Device> device;
     ComPtr<ID3D11DeviceContext> context;

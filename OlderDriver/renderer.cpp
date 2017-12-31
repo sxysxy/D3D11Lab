@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "shaders.h"
 #include "stdafx.h"
+#include "bitmap.h"
 
 Renderer::Renderer() {
     _phase = RENDERER_PREPARING;
@@ -8,6 +9,7 @@ Renderer::Renderer() {
     vsync = false;
 	fpsctrl = new FPSCTRL;
 	task_tim = 0;
+	preempted = false;
 }
 
 Renderer::~Renderer() {
@@ -30,7 +32,7 @@ void Renderer::Initialize(HWND hWnd) {
         RtlZeroMemory(&sd, sizeof sd);
         sd.BufferCount = 1;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        sd.Windowed = true;
+		sd.Windowed = true;
         sd.OutputWindow = window;
         sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
         sd.BufferDesc.Width = rect.right;
@@ -71,8 +73,7 @@ void Renderer::Resize(int w, int h) {
 
     context->OMSetRenderTargets(1, main_target.GetAddressOf(), 0);
 	
-	SetViewport({ 0, 0, w, h });
-    _width = w, _height = h;
+	SetViewport({ 0, 0, _width = w, _height = h });
 }
 
 void Renderer::Mainloop() {
@@ -92,15 +93,22 @@ void Renderer::Mainloop() {
 			_phase &= ~(RENDERER_READY);
 			_phase |= RENDERER_RENDERING;
 
-            SetDefaultTarget();
-            Clear();
 
+			
+			if (preempted) {
+				SetDefaultTarget();
+				Clear();
+			}
             //perform tasks
-            while (!tasks.empty()) {
-                RenderTask ct = tasks.front();
-                tasks.pop();
-                if(ct.call)ct.call(this);
+			while (!tasks.empty()) {
+				if (mtx_push_task.try_lock()) {
+					RenderTask ct = tasks.front();
+					tasks.pop();
+					mtx_push_task.unlock();
+					if (ct.call)ct.call(this);
+				}
             }
+
 
 			_phase ^= RENDERER_RENDERING;
 			_phase |= RENDERER_READY;
@@ -121,6 +129,14 @@ void Renderer::Mainloop() {
 
 void Renderer::SetDefaultTarget() {
     current_target = main_target.Get();
+	context->OMSetRenderTargets(1, &current_target, 0);
+	SetViewport({ 0, 0, width, height });
+}
+
+void Renderer::SetRenderTarget(Bitmap *bmp) {
+	current_target = bmp->render_target_view.Get();
+	context->OMSetRenderTargets(1, bmp->render_target_view.GetAddressOf(), 0);
+	SetViewport({ 0, 0, bmp->width, bmp->height });
 }
 
 void Renderer::Clear() {
@@ -145,25 +161,37 @@ void Renderer::BindPipeline(RenderPipeline *pipeline){
 	BindVertexShader(&pipeline->vshader);
 	BindPixelShader(&pipeline->pshader);
 	g_renderer->context->IASetInputLayout(pipeline->input_layout.Get());
+
+	render_pipeline = pipeline;
 }
 
 void Renderer::BindVertexShader(VertexShader *shader){
 	context->VSSetShader(shader->shader.Get(), 0, 0);
+	if (shader->cbuffer) {
+		context->VSSetConstantBuffers(0, 1, shader->cbuffer.GetAddressOf());
+	}
 }
 
 void Renderer::BindPixelShader(PixelShader *shader){
 	context->PSSetShader(shader->shader.Get(), 0, 0);
 	context->PSSetSamplers(0, 1, shader->sampler.GetAddressOf());
+	if (shader->cbuffer) {
+		context->PSSetConstantBuffers(0, 1, shader->cbuffer.GetAddressOf());
+	}
 }
 
 void Renderer::PushTask(const std::function<void(Renderer *renderer)> &f) {
-	if (mtx_push_task.try_lock()) {
-		tasks.push({ f, task_tim});
-		mtx_push_task.unlock();
+	while (true) {
+		if (mtx_push_task.try_lock()) {
+			tasks.push({ f, task_tim });
+			mtx_push_task.unlock();
+			break;
+		}
 	}
 }
 
 void Renderer::SetViewport(const RECT &rect) {
+	viewport = rect;
 	D3D11_VIEWPORT viewport;
 	viewport.TopLeftX = rect.left;
 	viewport.TopLeftY = rect.top;
@@ -172,6 +200,18 @@ void Renderer::SetViewport(const RECT &rect) {
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
 	context->RSSetViewports(1, &viewport);
+}
+
+void Renderer::Preempt() {
+	sync_mutex.lock();
+	preempted = true;
+	sync_mutex.unlock();
+}
+
+void Renderer::PreemptDisable() {
+	sync_mutex.lock();
+	preempted = false;
+	sync_mutex.unlock();
 }
 
 namespace Renderer2D {
@@ -192,6 +232,8 @@ namespace Renderer2D {
 			std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
 			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
 			2);
+		render_texture2d_pipeline.vshader.CreateConstantBuffer(64);
+		
 	}
 	void DrawRect(Renderer *renderer, float position[4][2], float colors[4][4]) {
 
