@@ -1,7 +1,11 @@
+#pragma once
 /*
 	Easy Smart Pointer based on reference count.
 				--by HfCloud.
 */
+
+namespace Utility{
+
 
 class ReferredObject{
 	int _ref_count;
@@ -113,3 +117,4 @@ public:
 	}
 };
 
+}

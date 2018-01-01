@@ -94,11 +94,6 @@ void Renderer::Mainloop() {
 			_phase |= RENDERER_RENDERING;
 
 
-			
-			if (preempted) {
-				SetDefaultTarget();
-				Clear();
-			}
             //perform tasks
 			while (!tasks.empty()) {
 				if (mtx_push_task.try_lock()) {
@@ -193,8 +188,8 @@ void Renderer::PushTask(const std::function<void(Renderer *renderer)> &f) {
 void Renderer::SetViewport(const RECT &rect) {
 	viewport = rect;
 	D3D11_VIEWPORT viewport;
-	viewport.TopLeftX = rect.left;
-	viewport.TopLeftY = rect.top;
+	viewport.TopLeftX = (float)rect.left;
+	viewport.TopLeftY = (float)rect.top;
 	viewport.Width = (float)(rect.right - rect.left);
 	viewport.Height = (float)(rect.bottom - rect.top);
 	viewport.MaxDepth = 1.0f;
@@ -225,6 +220,7 @@ namespace Renderer2D {
 			std::initializer_list<std::string>({ "POSITION", "COLOR" }).begin(),
 			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT }).begin(),
 			2);
+		render_shape2d_pipeline.vshader.CreateConstantBuffer(16);
 
 		render_texture2d_pipeline.vshader.Create(L"texture_vs.bin");
 		render_texture2d_pipeline.pshader.Create(L"texture_ps.bin");

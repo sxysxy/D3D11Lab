@@ -28,6 +28,7 @@
 #include <mmsystem.h>
 
 #include "../Utility/ReferPtr.h"
+#include "../Utility/Shapes.h"
 
 template<typename T>using ComPtr = Microsoft::WRL::ComPtr<T>;
 

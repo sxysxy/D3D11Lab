@@ -33,3 +33,34 @@ Bitmap::Bitmap(const std::wstring &filename){
 	}
 }
 
+void Bitmap::FillRect(const Utility::Rect & rect) {
+	struct Params {
+		float x, y, width, height;
+	}params { 2.0f * rect.x / g_renderer->viewport.right, 2.0f * rect.y / g_renderer->viewport.bottom,
+				rect.w / g_renderer->viewport.right, rect.h / g_renderer->viewport.bottom};
+	g_renderer->context->UpdateSubresource(Renderer2D::render_shape2d_pipeline.vshader.cbuffer.Get(), 0, 0, &params, 0, 0);
+
+	/*
+	ComPtr<ID3D11Buffer> vbuffer;
+	D3D11_BUFFER_DESC bd;
+	RtlZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.ByteWidth = sizeof(vecs);
+	D3D11_SUBRESOURCE_DATA data;
+	RtlZeroMemory(&data, sizeof data);
+
+	data.pSysMem = vecs;
+	if (FAILED(renderer->device->CreateBuffer(&bd, &data, &vbuffer))) {
+		throw std::runtime_error("´´½¨¶¥µã»º³åÊ§°Ü");
+	}
+
+	UINT stride = sizeof(TTTT);
+	UINT offset = 0;
+	renderer->context->IASetVertexBuffers(0, 1, vbuffer.GetAddressOf(), &stride, &offset);
+	renderer->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	renderer->context->Draw(4, 0);
+	*/
+
+}
+

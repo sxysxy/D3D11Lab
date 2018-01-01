@@ -6,7 +6,7 @@
 #include "global.h"
 #include "bitmap.h"
 
-class Sprite : public ReferredObject{
+class Sprite : public Utility::ReferredObject{
 
 	ComPtr<ID3D11Buffer> vertex_buffer;
 	struct Vertex {
@@ -27,7 +27,7 @@ public:
 	float zoomx, zoomy;
 	float angle;
 
-	ReferPtr<Bitmap> bitmap;
+	Utility::ReferPtr<Bitmap> bitmap;
 
 	Sprite() {}
 	Sprite(Bitmap *bmp);
