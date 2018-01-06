@@ -1,5 +1,15 @@
 #pragma once
 
+#include <mutex>
+#include <functional>
+#include <algorithm>
+#include <set>
+#include <map>
+#include <queue>
+#include <thread>
+#include <deque>
+#include <string>
+#include "../Utility/embeddedruby.h" //MUST be included BEFORE '#include <windows.h>' and AFTER C++STL.
 #include <Windows.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -9,21 +19,11 @@
 #include <cctype>
 #include <string>
 #include <cstring>
-#include <thread>
-#include <queue>
-#include <mutex>
-#include <string>
 #include <cmath>
 #include <DirectXMath.h>
 #include <d3d11.h>
 #include <D3DX11.h>
 #include <wrl/client.h>
-#include <mutex>
-#include <functional>
-#include <algorithm>
-#include <set>
-#include <map>
-#include <deque>
 #include <wincodec.h>
 #include <mmsystem.h>
 

@@ -30,6 +30,8 @@ public:
 
     void Initialize();
     void Mainloop(const std::function<void(Renderer *renderer)> &callback);
+	void LogicLoop(const std::function<void(Renderer *)> &callback);
+	void MessageLoop();
 	void SetFrameRate(int r) {
 		fpsctrl->Restart(r);
 	}

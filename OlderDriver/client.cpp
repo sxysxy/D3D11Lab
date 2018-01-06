@@ -11,23 +11,27 @@ Client::~Client() {
     renderer.Terminate();
 	delete fpsctrl;
 }
-void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
 
-	renderer.Mainloop();
+void Client::LogicLoop(const std::function<void(Renderer *)> &callback) {
+	while (!quit) {
+		callback(&renderer);
+		fpsctrl->Await();
+	}
+}
 
-	std::thread f = std::thread([&](){
-		while (!quit) {
-			callback(&renderer);
-			fpsctrl->Await();
-		}
-	});
-
+void Client::MessageLoop() {
 	MSG msg;
 	while (GetMessage(&msg, 0, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+}
 
+void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
+
+	renderer.Mainloop();
+	std::thread f([&]() {LogicLoop(callback); });
+	MessageLoop();
 	quit = true;
 	f.join();
 }

@@ -45,6 +45,12 @@
     <ClInclude Include="global.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="rubyext.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="libmsvcrt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -75,6 +81,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="global.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rubyext.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="libmsvcrt.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

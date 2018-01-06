@@ -171,6 +171,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="FirstShader.shader" />
+    <None Include="render_ps.shader" />
+    <None Include="render_vs.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />

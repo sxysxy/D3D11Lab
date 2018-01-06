@@ -52,7 +52,7 @@ FLOAT backColor[] = { 0.0f, 1.0f, 0.0f, 0.0f };
 void D3D11Application::render() {
     renderer->clear();
     if(update)update();
-    renderer->present(0);
+    renderer->present(1);
 }
 
 void D3D11Application::mainloop() {

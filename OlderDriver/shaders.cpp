@@ -1,18 +1,21 @@
 #include "renderer.h"
 #include "global.h"
 #include "shaders.h"
+#include "libmsvcrt.h"
 
 void Shader::Create(const std::wstring &filename) {
 	FILE *file = _wfopen(filename.c_str(), L"rb");
+	//MessageBox(0, L"h", L"hh", 0);
 	if (!file) 
 		throw std::runtime_error("找不到文件");
 	int length;
 	fread(&length, 4, 1, file);
 	char *buffer = new char[length];
 	fread(buffer, length, 1, file);
-	fclose(file);
+	MSVCRT::fclose(file);
 	CreateShaderFromBinary(buffer, length);
 }
+
 
 void Shader::CreateConstantBuffer(int size) {
 	if (size % 16) {

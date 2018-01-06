@@ -30,14 +30,14 @@ Sprite::Sprite(Bitmap *bmp) {
 }
 
 void Sprite::Render() {
-	if (!g_renderer->render_pipeline->vshader.cbuffer) {
-		throw std::runtime_error("不适宜的顶点缓冲，请确认切换至texture2d_pipeline");
+	if (!Renderer2D::render_texture2d_pipeline.current) {
+		throw std::runtime_error("不适宜的渲染管线!");
 	}
 	
 	g_renderer->context->PSSetShaderResources(0, 1, bitmap->shader_resource_view.GetAddressOf());
-	ShaderParam param = { zoomx * bitmap->width / g_renderer->width,   //width
-		zoomy * bitmap->height / g_renderer->height,  //height
-		2.0f * x / g_renderer->width, 2.0f * y / g_renderer->height,       //x, y
+	ShaderParam param = { zoomx * bitmap->width / g_renderer->viewport.right,   //width
+		zoomy * bitmap->height / g_renderer->viewport.bottom,  //height
+		2.0f * x / g_renderer->viewport.right, 2.0f * y / g_renderer->viewport.bottom,       //x, y
 		sin(angle), cos(angle) };  //rotation
 	g_renderer->context->UpdateSubresource(g_renderer->render_pipeline->vshader.cbuffer.Get(), 0, 0,
 		&param,

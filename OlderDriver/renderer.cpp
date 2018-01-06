@@ -77,49 +77,51 @@ void Renderer::Resize(int w, int h) {
 }
 
 void Renderer::Mainloop() {
-	
     render_thread = std::thread([this]() {
-
-        HMODULE hNtdll = LoadLibraryW(L"ntdll.dll");
-        typedef NTSTATUS(__stdcall * pNtDelayExecution) (BOOL, PLARGE_INTEGER);
-        pNtDelayExecution NtDelayExecution;
-        RCHECK((NtDelayExecution = (pNtDelayExecution)GetProcAddress(hNtdll, "NtDelayExecution")), L"ntdll!NtDelayExecution加载失败");
-		_phase ^= RENDERER_PREPARING;
-
-		SetFrameRate(frame_rate);
-
-        while ((phase & RENDERER_TERMINATED) == 0) {
-
-			_phase &= ~(RENDERER_READY);
-			_phase |= RENDERER_RENDERING;
-
-
-            //perform tasks
-			while (!tasks.empty()) {
-				if (mtx_push_task.try_lock()) {
-					RenderTask ct = tasks.front();
-					tasks.pop();
-					mtx_push_task.unlock();
-					if (ct.call)ct.call(this);
-				}
-            }
-
-
-			_phase ^= RENDERER_RENDERING;
-			_phase |= RENDERER_READY;
-
-			if (vsync) {
-				RenderVsync();
-				continue;
-			}
-
-			RenderImmediately();
-			task_tim++;
-			if (frame_rate <= 0)
-				continue;
-			else fpsctrl->Await();
-        }
+		MainloopProc();
     });
+}
+
+void Renderer::MainloopProc(){
+
+	HMODULE hNtdll = LoadLibraryW(L"ntdll.dll");
+	typedef NTSTATUS(__stdcall * pNtDelayExecution) (BOOL, PLARGE_INTEGER);
+	pNtDelayExecution NtDelayExecution;
+	RCHECK((NtDelayExecution = (pNtDelayExecution)GetProcAddress(hNtdll, "NtDelayExecution")), L"ntdll!NtDelayExecution加载失败");
+	_phase ^= RENDERER_PREPARING;
+
+	SetFrameRate(frame_rate);
+	while ((phase & RENDERER_TERMINATED) == 0) {
+
+		_phase &= ~(RENDERER_READY);
+		_phase |= RENDERER_RENDERING;
+
+
+		//perform tasks
+		while (!tasks.empty()) {
+			if (mtx_push_task.try_lock()) {
+				RenderTask ct = tasks.front();
+				tasks.pop();
+				mtx_push_task.unlock();
+				if (ct.call)ct.call(this);
+			}
+		}
+
+
+		_phase ^= RENDERER_RENDERING;
+		_phase |= RENDERER_READY;
+
+		if (vsync) {
+			RenderVsync();
+			continue;
+		}
+
+		RenderImmediately();
+		task_tim++;
+		if (frame_rate <= 0)
+			continue;
+		else fpsctrl->Await();
+	}
 }
 
 void Renderer::SetDefaultTarget() {
@@ -158,6 +160,7 @@ void Renderer::BindPipeline(RenderPipeline *pipeline){
 	g_renderer->context->IASetInputLayout(pipeline->input_layout.Get());
 
 	render_pipeline = pipeline;
+	render_pipeline->current = true;
 }
 
 void Renderer::BindVertexShader(VertexShader *shader){
@@ -169,6 +172,7 @@ void Renderer::BindVertexShader(VertexShader *shader){
 
 void Renderer::BindPixelShader(PixelShader *shader){
 	context->PSSetShader(shader->shader.Get(), 0, 0);
+	if (shader->sampler)context->PSSetSamplers(0, 1, shader->sampler.GetAddressOf());
 	context->PSSetSamplers(0, 1, shader->sampler.GetAddressOf());
 	if (shader->cbuffer) {
 		context->PSSetConstantBuffers(0, 1, shader->cbuffer.GetAddressOf());
@@ -212,38 +216,22 @@ void Renderer::PreemptDisable() {
 namespace Renderer2D {
 	RenderPipeline render_texture2d_pipeline;
 	RenderPipeline render_shape2d_pipeline;
+	ComPtr<ID3D11Buffer> render_shape2d_vbuffer;
 
 	void CreatePipelines() {
 		render_shape2d_pipeline.vshader.Create(L"render_vs.bin");
 		render_shape2d_pipeline.pshader.Create(L"render_ps.bin");
 		render_shape2d_pipeline.SetInputLayout(
-			std::initializer_list<std::string>({ "POSITION", "COLOR" }).begin(),
-			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT }).begin(),
-			2);
-		render_shape2d_pipeline.vshader.CreateConstantBuffer(16);
-
-		render_texture2d_pipeline.vshader.Create(L"texture_vs.bin");
-		render_texture2d_pipeline.pshader.Create(L"texture_ps.bin");
-		render_texture2d_pipeline.SetInputLayout(
-			std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
-			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
-			2);
-		render_texture2d_pipeline.vshader.CreateConstantBuffer(64);
-		
-	}
-	void DrawRect(Renderer *renderer, float position[4][2], float colors[4][4]) {
-
-		struct TTTT{
-			DirectX::XMFLOAT3 position;
-			DirectX::XMFLOAT4 color;
-		}vecs[4] = {
-			{{ position[0][0], position[0][1], 0}, { colors[0][0], colors[0][1], colors[0][2], colors[0][3] }}, 
-			{{ position[1][0], position[1][1], 0}, { colors[1][0], colors[1][1], colors[1][2], colors[1][3] }}, 
-			{{ position[2][0], position[2][1], 0}, { colors[2][0], colors[2][1], colors[2][2], colors[2][3] }},
-			{{ position[3][0], position[3][1], 0}, { colors[3][0], colors[3][1], colors[3][2], colors[3][3] }}
-		};
-
-		ComPtr<ID3D11Buffer> vbuffer;
+			std::initializer_list<std::string>({ "POSITION" }).begin(),
+			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32A32_FLOAT}).begin(),
+			1);
+		render_shape2d_pipeline.pshader.CreateConstantBuffer(16);
+		DirectX::XMFLOAT4 vecs[4] = {
+			{ -1.0f, -1.0f, 0.0f, 0.0f } ,
+			{ -1.0f, 1.0f, 0.0f, 0.0f } ,
+			{ 1.0f, -1.0f, 0.0f, 0.0f } ,
+			{ 1.0f, 1.0f, 0.0f, 0.0f }
+		}; //左下， 左上， 右下， 右上
 		D3D11_BUFFER_DESC bd;
 		RtlZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
@@ -251,16 +239,47 @@ namespace Renderer2D {
 		bd.ByteWidth = sizeof(vecs);
 		D3D11_SUBRESOURCE_DATA data;
 		RtlZeroMemory(&data, sizeof data);
-		
 		data.pSysMem = vecs;
-		if (FAILED(renderer->device->CreateBuffer(&bd, &data, &vbuffer))) {
+		if (FAILED(g_renderer->device->CreateBuffer(&bd, &data, &render_shape2d_vbuffer))) {
 			throw std::runtime_error("创建顶点缓冲失败");
 		}
 
-		UINT stride = sizeof(TTTT);
+		//----------------------------------------------------------------------------------------
+		render_texture2d_pipeline.vshader.Create(L"texture_vs.bin");
+		render_texture2d_pipeline.pshader.Create(L"texture_ps.bin");
+		render_texture2d_pipeline.pshader.CreateSampler();
+		render_texture2d_pipeline.SetInputLayout(
+			std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
+			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
+			2);
+		render_texture2d_pipeline.vshader.CreateConstantBuffer(32);
+
+	}
+	void FillRect(const Utility::Rect &rect, const Utility::Color &color){
+		if (!Renderer2D::render_shape2d_pipeline.current) {
+			throw std::runtime_error("不适宜的渲染管线");
+		}
+
+		//左下， 左上， 右下， 右上
+		int midx = g_renderer->viewport.right / 2;
+		int midy = g_renderer->viewport.bottom / 2;
+		float x1 = 1.0f * (rect.x - midx) / midx;
+		float x2 = 1.0f * (rect.x + rect.w - midx) / midx;
+		float y2 = -1.0f * (rect.y - midy) / midy;
+		float y1 = -1.0f * (rect.y + rect.h - midy) / midy;
+		DirectX::XMFLOAT4 vecs[4] = {
+			{x1, y1, 0.0f, 0.0f},
+			{x1, y2, 0.0f, 0.0f},
+			{x2, y1, 0.0f, 0.0f},
+			{x2, y2, 0.0f, 0.0f}
+		};
+
+		g_renderer->context->UpdateSubresource(render_shape2d_vbuffer.Get(), 0, 0, vecs, 0, 0);
+		g_renderer->context->UpdateSubresource(Renderer2D::render_shape2d_pipeline.pshader.cbuffer.Get(), 0, 0, &color, 0, 0);
+		UINT stride = sizeof(DirectX::XMFLOAT4);
 		UINT offset = 0;
-		renderer->context->IASetVertexBuffers(0, 1, vbuffer.GetAddressOf(), &stride, &offset);
-		renderer->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		renderer->context->Draw(4, 0);
+		g_renderer->context->IASetVertexBuffers(0, 1, render_shape2d_vbuffer.GetAddressOf(), &stride, &offset);
+		g_renderer->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		g_renderer->context->Draw(4, 0);
 	}
 }

@@ -107,82 +107,60 @@ void __fastcall D3D11Renderer::present(int level = 1) {
 
 void D3D11Renderer::initPipeline() {
     ComPtr<ID3D10Blob> VS, PS;
-  
-    /*
-    std::shared_ptr <char> pvsc(new char[1000]), ppsc(new char[1000]);
-    int vss, pss;
-    FILE *fr = fopen("vs.vsb", "rb");
-    vss = fread(pvsc.get(), 1, 1000, fr);
-    fclose(fr);
-    fr = fopen("ps.psb", "rb");
-    pss = fread(ppsc.get(), 1, 1000, fr);
-    fclose(fr);
-    */
-
     
-    RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("FirstShader.shader"), 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0)), 
+    RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("render_vs.shader"), 0, 0, "main", "vs_4_0", 0, 0, 0, &VS, 0, 0)), 
         L"编译顶点着色器失败");
-    RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("FirstShader.shader"), 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0)),
+    RCHECK(SUCCEEDED(D3DX11CompileFromFile(_T("render_ps.shader"), 0, 0, "main", "ps_4_0", 0, 0, 0, &PS, 0, 0)),
         L"编译像素着色器失败");
-    
-
-    //RCHECK(SUCCEEDED(d3dDevice->CreateVertexShader(pvsc.get(), vss, NULL, &vs)), L"创建顶点着色器失败！")
-    //RCHECK(SUCCEEDED(d3dDevice->CreatePixelShader(ppsc.get(), pss, NULL, &ps)), L"创建像素着色器失败！");
 
     RCHECK(SUCCEEDED(d3dDevice->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &vs)), L"创建顶点着色器失败！")
     RCHECK(SUCCEEDED(d3dDevice->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &ps)), L"创建像素着色器失败！");
     
-    
-    //store the shaders' binary code.
-    /*
-    FILE *ftmp = fopen("vs.vsb", "wb");
-    fwrite(VS->GetBufferPointer(), VS->GetBufferSize(), 1, ftmp);
-    fclose(ftmp);
-    ftmp = fopen("ps.psb", "wb");
-    fwrite(PS->GetBufferPointer(), PS->GetBufferSize(), 1, ftmp);
-    fclose(ftmp);
-    */
-    
-
     d3dimmContext->VSSetShader(vs, 0, 0);
     d3dimmContext->PSSetShader(ps, 0, 0);
-
     D3D11_INPUT_ELEMENT_DESC ied[] = 
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
-    d3dDevice->CreateInputLayout(ied, 2, 
-        VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout);
- //   d3dDevice->CreateInputLayout(ied, 2, 
-  //              pvsc.get(), vss, &inputLayout);
+	if (FAILED(d3dDevice->CreateInputLayout(ied, 1,
+		VS->GetBufferPointer(), VS->GetBufferSize(), &inputLayout))) {
+		throw std::runtime_error("输入布局不正确");
+	}
     d3dimmContext->IASetInputLayout(inputLayout);
-	
+
+	D3D11_BUFFER_DESC bd;
+	RtlZeroMemory(&bd, sizeof bd);
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.ByteWidth = 16;
+	if (FAILED(d3dDevice->CreateBuffer(&bd, nullptr, &cbuffer_vs))) {
+		throw std::runtime_error("创建常量缓冲区失败!");
+	}
+	if (FAILED(d3dDevice->CreateBuffer(&bd, nullptr, &cbuffer_ps))) {
+		throw std::runtime_error("创建常量缓冲区失败!");
+	}
+
+	d3dimmContext->PSSetConstantBuffers(0, 1, cbuffer_ps.GetAddressOf());
+
 }
 
 void D3D11Renderer::initGraphics() {
-    VERTEX vecs[100];
-    RtlZeroMemory(vecs, sizeof(vecs));
-    float x = -0.5, y = -0.5;
-    for (int i = 0; i < 2; i++) {
-        y = -0.5f;
-        for (int j = 0; j < 2; j++) {
-            vecs[j + i * 2] = { {x, y, 0}, {1.0f*(rand()&1), 1.0f*(rand() & 1), 1.0f*(rand() & 1), 1.0f} };
-            y += 1.0f;
-        }
-        x += 1.0f;
-    }//{-0.5, -0.5}, {-0.5, 0.5}, {0.5, -0.5}{0.5, 0.5}
+
+	DirectX::XMFLOAT4 vecs[4] = {
+		{ 0.0f, 0.0f, 0.0f, 0.0f } ,
+		{ 0.0f, 1.0f, 0.0f, 0.0f } ,
+		{ 1.0f, 0.0f, 0.0f, 0.0f } ,
+		{ 1.0f, 1.0f, 0.0f, 0.0f } ,
+	};
+	//{-0.5, -0.5}, {-0.5, 0.5}, {0.5, -0.5}{0.5, 0.5}
 
     D3D11_BUFFER_DESC bd;
     RtlZeroMemory(&bd, sizeof(bd));
-    bd.Usage = D3D11_USAGE_DYNAMIC;
-    bd.ByteWidth = sizeof(VERTEX)*4;
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(vecs);
     bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    RCHECK(SUCCEEDED(d3dDevice->CreateBuffer(&bd, NULL, &vb)), L"创建顶点缓冲区失败！");
-
-    D3D11_MAPPED_SUBRESOURCE ms;
-    d3dimmContext->Map(vb, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
-    memcpy(ms.pData, vecs, sizeof(vecs));
-    d3dimmContext->Unmap(vb, NULL);
+	D3D11_SUBRESOURCE_DATA data;
+	RtlZeroMemory(&data, sizeof data);
+	data.pSysMem = vecs;
+    RCHECK(SUCCEEDED(d3dDevice->CreateBuffer(&bd, &data, &vb)), L"创建顶点缓冲区失败！");
 }

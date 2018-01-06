@@ -48,9 +48,13 @@ class RenderPipeline {
 public:
 	VertexShader vshader;
 	PixelShader pshader;
-
+	bool current;
 	ComPtr<ID3D11InputLayout> input_layout;
 
 	void SetInputLayout(const std::string*, const DXGI_FORMAT *formats, int count);
+
+	RenderPipeline() {
+		current = false;
+	}
 };
 

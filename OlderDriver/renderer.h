@@ -80,6 +80,7 @@ public:
 	~Renderer();
     void Initialize(HWND hWnd);
     void Mainloop();
+	void MainloopProc();
     void SetDefaultTarget();
 	void SetRenderTarget(Bitmap *bmp);
     void Clear();
@@ -113,6 +114,5 @@ namespace Renderer2D {
 	extern RenderPipeline render_shape2d_pipeline;
 
 	void CreatePipelines();
-
-	void DrawRect(Renderer *renderer, float position[4][2], float colors[4][4]);
+	void FillRect(const Utility::Rect & rect, const Utility::Color &color); 
 }

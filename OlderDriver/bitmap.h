@@ -18,6 +18,4 @@ public:
 
 	Bitmap(int w, int h);
 	Bitmap(const std::wstring &filename);
-
-	void FillRect(const Utility::Rect &rect);
 };

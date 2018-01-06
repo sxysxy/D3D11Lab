@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "First", "First\First.vcxproj", "{7D75A034-2C69-4E06-AED4-88F75229FD62}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{4CED17B4-4F84-43A2-863B-DD7022B73AF0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Texture2DClass", "Texture2DClass\Texture2DClass.vcxproj", "{DFB59A03-1B30-4D0E-9BE8-4E37DADCA7AA}"
 EndProject
@@ -14,6 +12,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OlderDriver", "OlderDriver\OlderDriver.vcxproj", "{A6061AB0-1A12-415E-BAAC-F901DAD2B001}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderCompiler", "ShaderCompiler\ShaderCompiler.vcxproj", "{AAE21600-E2FE-494D-8E0C-190D52287EBB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utility", "Utility", "{E56BB86B-754F-48B6-B849-9268F5FABA32}"
+	ProjectSection(SolutionItems) = preProject
+		Utility\embeddedruby.h = Utility\embeddedruby.h
+		Utility\referptr.h = Utility\referptr.h
+		Utility\shapes.h = Utility\shapes.h
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,5 +71,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BFBE0539-903A-443B-8AA9-7B7CC0D8EBCA}
 	EndGlobalSection
 EndGlobal

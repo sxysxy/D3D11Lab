@@ -35,6 +35,12 @@
     <None Include="FirstShader.shader">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="render_ps.shader">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="render_vs.shader">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">

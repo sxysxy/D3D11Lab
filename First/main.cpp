@@ -8,33 +8,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
     D3D11Application app;
     app.init(L"Demo", 600, 600);
 
-    
-    long long freq;
-    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-    long long last;
-    int counter = 0;
-    QueryPerformanceCounter((LARGE_INTEGER*)&last);
-    
-
     app.update = [&]() {
         D3D11Renderer &renderer = *app.renderer;
         
-        UINT stride = sizeof(D3D11Renderer::VERTEX);
+        UINT stride = sizeof(DirectX::XMFLOAT4)*1;
         UINT offset = 0;
         renderer.d3dimmContext->IASetVertexBuffers(0, 1, &renderer.vb, &stride, &offset);
-        renderer.d3dimmContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        renderer.d3dimmContext->Draw(4, 0);
+        renderer.d3dimmContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
-        counter++;
-        long long now;
-        QueryPerformanceCounter((LARGE_INTEGER*)&now);
-        if (now - last > freq) {
-            long long t = now-last-freq;
-            last = now+t;
-            wsprintfW(title, L"Demo - FPS : %d", counter);
-            counter = 0;
-            SetWindowText(app.hWnd, title);
-        }
+		renderer.d3dimmContext->UpdateSubresource(renderer.cbuffer_ps.Get(), 0, 0, color, 0, 0);
+        renderer.d3dimmContext->Draw(4, 0);
         
     };
     app.mainloop();

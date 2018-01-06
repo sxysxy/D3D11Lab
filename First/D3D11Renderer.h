@@ -19,15 +19,7 @@ public:
     ID3D11PixelShader *ps;
     ID3D11Buffer *vb;
 
-    
-    struct VERTEX {
-        struct {
-            float x, y, z;
-        }position;
-        struct {
-            float r, g, b, a;
-        }color;
-    };
+	ComPtr<ID3D11Buffer> cbuffer_vs, cbuffer_ps;
    
 
     void init(HWND hWnd);
