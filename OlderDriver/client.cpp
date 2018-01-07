@@ -8,7 +8,6 @@ void Client::Initialize() {
     renderer.Initialize(hWnd);
 }
 Client::~Client() {
-    renderer.Terminate();
 	delete fpsctrl;
 }
 
@@ -29,11 +28,13 @@ void Client::MessageLoop() {
 
 void Client::Mainloop(const std::function<void(Renderer *)> &callback) {
 
-	renderer.Mainloop();
+	std::thread r([&]() {renderer.MainloopProc();  });
 	std::thread f([&]() {LogicLoop(callback); });
 	MessageLoop();
+	renderer.Terminate();
 	quit = true;
 	f.join();
+	r.join();
 }
 
 void Client::InitWindow() {

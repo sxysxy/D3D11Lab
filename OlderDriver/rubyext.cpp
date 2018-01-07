@@ -4,18 +4,19 @@
 std::wstring CharToWchar(const char* c, size_t m_encode = CP_ACP){
 	std::wstring str;
 	int len = MultiByteToWideChar(m_encode, 0, c, strlen(c), NULL, 0);
-	wchar_t*    m_wchar = new wchar_t[len + 1];
+	wchar_t *m_wchar = new wchar_t[len + 1];
 	MultiByteToWideChar(m_encode, 0, c, strlen(c), m_wchar, len);
 	m_wchar[len] = '\0';
 	str = m_wchar;
 	delete m_wchar;
 	return str;
+
 }
 
 std::string WcharToChar(const wchar_t* wp, size_t m_encode = CP_ACP){
 	std::string str;
 	int len = WideCharToMultiByte(m_encode, 0, wp, wcslen(wp), NULL, 0, NULL, NULL);
-	char    *m_char = new char[len + 1];
+	char *m_char = new char[len + 1];
 	WideCharToMultiByte(m_encode, 0, wp, wcslen(wp), m_char, len, NULL, NULL);
 	m_char[len] = '\0';
 	str = m_char;
@@ -28,7 +29,7 @@ Client *client;
 typedef VALUE(*rubyfunc) (...);
 static VALUE init_client(VALUE self, VALUE title, VALUE w, VALUE h, VALUE fps) {
 	
-	auto wtitle = CharToWchar(rb_string_value_cstr(&title));
+	auto wtitle = CharToWchar(rb_string_value_cstr(&title), CP_UTF8);
 
 	client = new Client(wtitle, FIX2INT(w), FIX2INT(h));
 	client->Initialize();
@@ -49,12 +50,14 @@ static VALUE client_messageloop(VALUE self) {
 
 static VALUE client_logicloop(VALUE self, VALUE callback) {
 	client->LogicLoop([=](Renderer *) {
+		//client->renderer.PushTask([&](Renderer *r) {r->Clear();});
 		rb_funcall(callback, rb_intern("call"), rb_iv_get(self, "@renderer"));
 	});
 	return Qnil;
 }
 
 static VALUE client_shutdown(VALUE self) {
+	client->renderer.Terminate();
 	client->quit = true;
 	return Qnil;
 }
@@ -96,7 +99,6 @@ void MakeExt() {
 
 	VALUE client_class = rb_define_class("Client", rb_cObject);
 	rb_define_method(client_class, "initialize", (rubyfunc)init_client, 4);
-	//rb_define_method(client_class, "mainloop", (rubyfunc)client_mainloop, 1);
 	rb_define_method(client_class, "messageloop", (rubyfunc)client_messageloop, 0);
 	rb_define_method(client_class, "logicloop", (rubyfunc)client_logicloop, 1);
 	rb_define_method(client_class, "shutdown", (rubyfunc)client_shutdown, 0);

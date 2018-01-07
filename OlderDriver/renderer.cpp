@@ -76,19 +76,7 @@ void Renderer::Resize(int w, int h) {
 	SetViewport({ 0, 0, _width = w, _height = h });
 }
 
-void Renderer::Mainloop() {
-    render_thread = std::thread([this]() {
-		MainloopProc();
-    });
-}
-
 void Renderer::MainloopProc(){
-
-	HMODULE hNtdll = LoadLibraryW(L"ntdll.dll");
-	typedef NTSTATUS(__stdcall * pNtDelayExecution) (BOOL, PLARGE_INTEGER);
-	pNtDelayExecution NtDelayExecution;
-	RCHECK((NtDelayExecution = (pNtDelayExecution)GetProcAddress(hNtdll, "NtDelayExecution")), L"ntdll!NtDelayExecution加载失败");
-	_phase ^= RENDERER_PREPARING;
 
 	SetFrameRate(frame_rate);
 	while ((phase & RENDERER_TERMINATED) == 0) {
@@ -217,21 +205,24 @@ namespace Renderer2D {
 	RenderPipeline render_texture2d_pipeline;
 	RenderPipeline render_shape2d_pipeline;
 	ComPtr<ID3D11Buffer> render_shape2d_vbuffer;
-
+	struct ColoredVertex {
+		DirectX::XMFLOAT4 position, color;
+	};
 	void CreatePipelines() {
 		render_shape2d_pipeline.vshader.Create(L"render_vs.bin");
 		render_shape2d_pipeline.pshader.Create(L"render_ps.bin");
 		render_shape2d_pipeline.SetInputLayout(
-			std::initializer_list<std::string>({ "POSITION" }).begin(),
-			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32A32_FLOAT}).begin(),
-			1);
-		render_shape2d_pipeline.pshader.CreateConstantBuffer(16);
-		DirectX::XMFLOAT4 vecs[4] = {
-			{ -1.0f, -1.0f, 0.0f, 0.0f } ,
-			{ -1.0f, 1.0f, 0.0f, 0.0f } ,
-			{ 1.0f, -1.0f, 0.0f, 0.0f } ,
-			{ 1.0f, 1.0f, 0.0f, 0.0f }
+			std::initializer_list<std::string>({ "POSITION" , "COLOR"}).begin(),
+			std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT}).begin(),
+			2);
+		
+		ColoredVertex vecs[4] = {
+			{{ -1.0f, -1.0f, 0.0f, 0.0f } , {0.0f, 0.0f, 1.0f, 1.0f}}, 
+			{{ -1.0f, 1.0f, 0.0f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f }},
+			{{ 1.0f, -1.0f, 0.0f, 0.0f } ,{0.0f, 0.0f, 1.0f, 1.0f}},
+			{{ 1.0f, 1.0f, 0.0f, 0.0f }, {0.0f, 0.0f, 1.0f, 1.0f}}
 		}; //左下， 左上， 右下， 右上
+
 		D3D11_BUFFER_DESC bd;
 		RtlZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
@@ -267,19 +258,40 @@ namespace Renderer2D {
 		float x2 = 1.0f * (rect.x + rect.w - midx) / midx;
 		float y2 = -1.0f * (rect.y - midy) / midy;
 		float y1 = -1.0f * (rect.y + rect.h - midy) / midy;
-		DirectX::XMFLOAT4 vecs[4] = {
-			{x1, y1, 0.0f, 0.0f},
-			{x1, y2, 0.0f, 0.0f},
-			{x2, y1, 0.0f, 0.0f},
-			{x2, y2, 0.0f, 0.0f}
+
+
+		ColoredVertex vecs[4] = {
+			{ { -1.0f, -1.0f, 0.0f, 0.0f } ,{ color.r, color.g, color.b, color.a } },
+			{ { -1.0f, 1.0f, 0.0f, 0.0f } ,{ color.r, color.g, color.b, color.a } },
+			{ { 1.0f, -1.0f, 0.0f, 0.0f } ,{ color.r, color.g, color.b, color.a } },
+			{ { 1.0f, 1.0f, 0.0f, 0.0f },{ color.r, color.g, color.b, color.a } }
+		}; //左下， 左上， 右下， 右上
+		RECT ov = g_renderer->viewport;
+		D3D11_VIEWPORT vp;
+		vp.Height = rect.h;
+		vp.Width = rect.w;
+		vp.TopLeftX = rect.x;
+		vp.TopLeftY = rect.y;
+		vp.MinDepth = 0.0f;
+		vp.MaxDepth = 1.0f;
+		g_renderer->context->RSSetViewports(1, &vp);
+
+		/*
+		ColoredVertex vecs[4] = {
+			{ {x1, y1, 0.0f, 0.0f}, { color.r, color.g, color.b, color.a} },
+			{ {x1, y2, 0.0f, 0.0f}, { color.r, color.g, color.b, color.a } },
+			{ {x2, y1, 0.0f, 0.0f}, { color.r, color.g, color.b, color.a } },
+			{ {x2, y2, 0.0f, 0.0f}, { color.r, color.g, color.b, color.a } }
 		};
+		*/
 
 		g_renderer->context->UpdateSubresource(render_shape2d_vbuffer.Get(), 0, 0, vecs, 0, 0);
-		g_renderer->context->UpdateSubresource(Renderer2D::render_shape2d_pipeline.pshader.cbuffer.Get(), 0, 0, &color, 0, 0);
-		UINT stride = sizeof(DirectX::XMFLOAT4);
+		UINT stride = sizeof(ColoredVertex);
 		UINT offset = 0;
 		g_renderer->context->IASetVertexBuffers(0, 1, render_shape2d_vbuffer.GetAddressOf(), &stride, &offset);
 		g_renderer->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		g_renderer->context->Draw(4, 0);
+
+		g_renderer->SetViewport(ov);
 	}
 }

@@ -32,7 +32,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 	MSVCRT::GetFunctions();
 
 	/*
-
 	if (GetFileAttributes(L"main.rb") == INVALID_FILE_ATTRIBUTES) {
 		MessageBox(0, L"main.rb not found, stop.", L"Error", MB_OK);
 		return 0;
@@ -40,7 +39,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 
 	return cmain(0, nullptr);
 	*/
-
 	
     Client client(L"对没错我就是叫紫妈qjwajdalkjdkdas", 600, 600);
     client.Initialize();
@@ -56,17 +54,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 		renderer->PushTask([&](Renderer *renderer) {
 			renderer->SetDefaultTarget();		//设置当前渲染模板为默认目标（即显示屏上的窗口）
 			renderer->Clear();					//清空渲染目标（屏幕）
-			//renderer->SetRenderTarget(bitmap.Get());	//设置当前渲染目标为bitmap
+			renderer->SetRenderTarget(bitmap.Get());	//设置当前渲染目标为bitmap
 			renderer->BindPipeline(&Renderer2D::render_shape2d_pipeline);  //使用2D多边形绘制渲染管线
-			Renderer2D::FillRect(Utility::Rect{ 200, 200, 200, 200 }, Utility::Color{ 0.0f, 1.0f, 1.0f, 1.0f });
+			Renderer2D::FillRect(Utility::Rect{ 100, 100, 100, 100 }, Utility::Color{ 0.0f, 1.0f, 1.0f, 1.0f });
 																		
-			//renderer->BindPipeline(&Renderer2D::render_texture2d_pipeline);  //使用2D贴图渲染管线
-			//renderer->SetDefaultTarget();								//
-			//sprite->Render();											//绘制精灵
+			renderer->BindPipeline(&Renderer2D::render_texture2d_pipeline);  //使用2D贴图渲染管线
+			renderer->SetDefaultTarget();								//
+			sprite->Render();											//绘制精灵
 			
 		});
 		renderer->PreemptDisable();			//解除抢占，渲染线程得以继续工作（然后它会把这帧的任务完成）
 	});
-
+	
 	
 }

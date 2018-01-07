@@ -4,7 +4,6 @@
 #include "shaders.h"
 class Bitmap;
 
-
 struct FPSCTRL {
 	long long time;
 	long long startt;
@@ -27,8 +26,9 @@ struct FPSCTRL {
 			QueryPerformanceCounter((PLARGE_INTEGER)&nowt);
 			long long d = nowt - startt;
 			if (d >= ticktime)break;
-			if (d >= 20000)Sleep(1);
-			else
+			if (d >= 20000)
+				Sleep(1);
+			else 
 				std::this_thread::yield();
 		}
 	}
@@ -69,8 +69,7 @@ public:
     const int &width = _width, &height = _height;
 	const int &frame_rate = _frame_rate;
 
-    std::thread render_thread;
-	std::mutex sync_mutex;
+	std::mutex sync_mutex;                   
 	bool vsync;
     std::queue<RenderTask> tasks;
 
@@ -79,7 +78,6 @@ public:
     Renderer();
 	~Renderer();
     void Initialize(HWND hWnd);
-    void Mainloop();
 	void MainloopProc();
     void SetDefaultTarget();
 	void SetRenderTarget(Bitmap *bmp);
@@ -90,7 +88,6 @@ public:
 
     inline void Terminate() {
 		_phase |= RENDERER_TERMINATED;
-        render_thread.join();
     }
 	void SetFrameRate(int f);
 
