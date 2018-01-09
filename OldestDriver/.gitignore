@@ -2,3 +2,5 @@ Win32
 x64
 *.exe
 *.zip
+*.iobj
+*.ipdb

@@ -17,7 +17,6 @@
 #include <stdarg.h>
 #include <d3d11.h>
 #include <D3DX11.h>
-#include <dxgi.h>
 #include <wrl\client.h>
 #include <referptr.h>
 #include <fpstimer.h>
@@ -30,5 +29,9 @@ using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 #define RCHECK(x, msg) if(!(x)){MessageBoxW(0, msg, L"Error", 0); exit(0);}
 
-
+#ifdef _UNICODE
+typedef std::wstring cstring;
+#else 
+typedef std::string cstring;
+#endif
 

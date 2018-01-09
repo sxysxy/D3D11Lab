@@ -4,27 +4,34 @@
 				--by HfCloud.
 */
 
+#include <assert.h>
+
 namespace Utility{
 
 
 class ReferredObject{
-	int _ref_count;
 public:
+	int __ref_count;
+	void *__ptr_marker;
+	
 	ReferredObject(){
-		_ref_count = 0;
+		__ref_count = 0;
+		__ptr_marker = nullptr;
 	}
 	
-	void AddRefer(){
-		_ref_count += 1;
+	int AddRefer(){
+		return ++__ref_count;
 	}
 	
-	void SubRefer(){
-		_ref_count -= 1;
+	int SubRefer(){
+		return --__ref_count;
 	}
 	
 	int GetReferCount() const{
-		return _ref_count;
+		return __ref_count;
 	}
+	
+	virtual void Release() = 0;
 };
 
 template<typename _T>
@@ -43,9 +50,6 @@ public:
 	ReferPtr(const ReferPtr &_optr) :ReferPtr() {
 		(*this) = _optr;
 	}
-	ReferPtr(ReferPtr &_optr) :ReferPtr() {
-		(*this) = _optr;
-	}
 	~ReferPtr() {
 		Release();
 	}
@@ -61,17 +65,25 @@ public:
 		return GetAddressOf();
 	}
 	_pT operator->() const {
-		return Get();
+		assert(_ptr);
+		
+		return _ptr;
 	}
 
 	void Release() {
-		if (_ptr) {
-			_ptr->SubRefer();
-			if (_ptr->GetReferCount() == 0) {
+		if(_ptr == nullptr)return;
+		if(_ptr -> __ptr_marker)_ptr -> SubRefer();
+		else{
+			_ptr -> __ptr_marker = (void *)this;
+			_ptr -> Release();
+			if(_ptr -> SubRefer() == 0){
 				delete _ptr;
-				_ptr = nullptr;
+			}else if(_ptr -> __ptr_marker == (void *)this){
+				_ptr -> __ptr_marker = nullptr;
+				return;
 			}
 		}
+		_ptr = nullptr;
 	}
 
 	explicit operator bool() const {
@@ -108,10 +120,9 @@ public:
 		return (*this) != _optr;
 	}
 
-
 	template<typename ... _Arg>
 	static ReferPtr New(const _Arg & ..._arg) {
-		typedef _T ___T; //mdzz msvc++ _T __T 
+		typedef _T ___T;          //mdzz msvc++ _T __T 
 		ReferPtr _ptr = new ___T(_arg...);
 		return _ptr;
 	}
