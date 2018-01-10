@@ -22,11 +22,15 @@ namespace Ext {
 	VALUE dummy(VALUE self, ...) {
 		return self;
 	}
+	VALUE exit_process(VALUE self, VALUE code) {
+		ExitProcess(FIX2INT(code)); 
+		return code;
+	}
 
 	void BasicExtensions() {
 		rb_define_module_function(rb_mKernel, "msgbox", (rubyfunc)__msgbox__, 1);
 		rb_define_module_function(rb_mKernel, "show_console", (rubyfunc)show_console, 0);
-
+		rb_define_module_function(rb_mKernel, "exit_process", (rubyfunc)exit_process, 1);
 	}
 
 	namespace DX {
@@ -51,6 +55,7 @@ namespace Ext {
 		void Init233() { //misc things...
 			module = rb_define_module("DX");
 			rb_define_singleton_method(module, "messageloop", (rubyfunc)messageloop, 0);
+			
 		}
 
 	}

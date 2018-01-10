@@ -54,7 +54,7 @@ void HFWindow::OnResized() {
 }
 
 void HFWindow::OnClosed() {
-	PostQuitMessage(0);
+	
 }
 
 void HFWindow::Create(const cstring &_title, int w, int h) {
@@ -98,7 +98,11 @@ namespace Ext {
 
 		void RHFWindow::OnClosed() {
 			HFWindow::OnClosed();
-			rb_funcall(self, rb_intern("call_handler"), 1, ID2SYM(rb_intern("on_closed")));
+			int s = 0;
+			rb_protect([](VALUE obj) -> VALUE {return rb_funcall(obj, rb_intern("call_handler"), 1, ID2SYM(rb_intern("on_closed"))); }, self, &s);
+			if (s) {
+				rb_funcall(rb_mKernel, rb_intern("msgbox"), 1, rb_errinfo());
+			}
 		}
 	
 
