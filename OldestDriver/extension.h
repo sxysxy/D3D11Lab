@@ -25,20 +25,6 @@ namespace Ext {
 		delete t;
 	}
 
-	template<class T>
-	struct RTemplate {
-		Utility::ReferPtr<T> native_object;
-		RTemplate<T>() { native_object = Utility::ReferPtr<T>::New(); };
-		~RTemplate<T>() { native_object.Release(); }
-	};
-
-	template<class warpT, class objT>
-	objT *GetNativeObject(VALUE self) {
-		warpT *ps;
-		Data_Get_Struct(self, warpT, ps);
-		return ps->native_object.Get();
-	}
-
 	namespace DX {
 		extern VALUE module;
 		

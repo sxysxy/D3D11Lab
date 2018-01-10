@@ -91,44 +91,61 @@ namespace Ext {
 	namespace HFWindow{
 		using namespace Utility;
 
-		VALUE klass;
+		void RHFWindow::OnResized() {
+			HFWindow::OnResized();
+			rb_funcall(self, rb_intern("call_handler"), 1, ID2SYM(rb_intern("on_resized")));
+		}
 
+		void RHFWindow::OnClosed() {
+			HFWindow::OnClosed();
+			rb_funcall(self, rb_intern("call_handler"), 1, ID2SYM(rb_intern("on_closed")));
+		}
+	
+
+		VALUE klass;
 		void Delete(RHFWindow *wnd) {
 			delete wnd;
 		}
 
 		VALUE New(VALUE klass) {
-			RHFWindow *wrap = new RHFWindow;
-			return Data_Wrap_Struct(klass, nullptr, Delete, wrap);
+			RHFWindow *wnd = new RHFWindow;
+			return Data_Wrap_Struct(klass, nullptr, Delete, wnd);
 		}
 
 		static VALUE initialize(VALUE self, VALUE title, VALUE w, VALUE h) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
+			wnd->self = self;
 			std::wstring wtitle;
 			U8ToU16(rb_string_value_cstr(&title), wtitle);
 			wnd->Initialize(wtitle.c_str(), FIX2INT(w), FIX2INT(h));
+			rb_iv_set(self, "@handlers", rb_hash_new());
+			//---
+			if (rb_block_given_p()) {
+				// VALUE rb_obj_instance_eval(int argc, VALUE *argv, VALUE self)
+				rb_obj_instance_eval(0, nullptr, self);
+			}
 			return self;
 		}
 
 		static VALUE show(VALUE self) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
 			wnd->Show();
 			return self;
 		}
 
 		static VALUE hide(VALUE self) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
 			wnd->Hide();
 			return self;
 		}
 
 		static VALUE native_handle(VALUE self) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
 			return INT2FIX(wnd->native_handle);
 		}
 
 		static VALUE set_title(VALUE self, VALUE title) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
 			std::wstring wtitle;
 			U8ToU16(rb_string_value_cstr(&title), wtitle);
 			wnd->SetTitle(wtitle);
@@ -136,7 +153,7 @@ namespace Ext {
 		}
 
 		static VALUE resize(VALUE self, VALUE w, VALUE h) {
-			auto *wnd = GetNativeObject<RHFWindow, ::HFWindow>(self);
+			auto *wnd = GetNativeObject<RHFWindow>(self);
 			wnd->Resize(FIX2INT(w), FIX2INT(h));
 			return self;
 		}

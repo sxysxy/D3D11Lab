@@ -48,7 +48,6 @@ public:
 
 	}
 
-
 	void Create(const cstring &_title, int w, int h);
 
 	cstring GetTitle() {
@@ -71,14 +70,32 @@ public:
 		ShowWindow(_native_handle, SW_HIDE);
 	}
 	void Resize(int w, int h);
-	void OnResized();
-	void OnClosed();
+
+	virtual void OnResized();
+	virtual void OnClosed();
 };
 
 namespace Ext {
 	namespace HFWindow{
 
-		typedef RTemplate<::HFWindow> RHFWindow;
+		class RHFWindow : public HFWindow {
+		public:
+			VALUE self;
+			
+			virtual void OnResized();
+			virtual void OnClosed();
+			
+			RHFWindow() : HFWindow() {
+				self = 0;
+			}
+		};
+
+		template<class T>
+		T *GetNativeObject(VALUE self) {
+			T *obj;
+			Data_Get_Struct(self, T, obj);
+			return obj;
+		}
 
 		extern VALUE klass;
 		void Init();

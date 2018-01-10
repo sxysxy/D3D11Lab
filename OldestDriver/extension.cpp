@@ -35,7 +35,7 @@ namespace Ext {
 		VALUE messageloop(VALUE self) {
 			MSG msg;
 			while (true) {
-				if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+				if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
