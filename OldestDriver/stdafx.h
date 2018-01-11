@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <cmath>
 #include <functional>
+#include <string>
 #include <embeddedruby.h>
 #include <windows.h>
 #include <stdio.h>

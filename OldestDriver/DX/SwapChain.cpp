@@ -35,8 +35,16 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
 void SwapChain::Resize(int w, int h) {
     native_swap_chain->ResizeBuffers(1, w, h,
         DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    ID3D11Texture2D *t = nullptr;
+    native_swap_chain->GetBuffer(0, 
+        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&t));
+    if (!t) {
+        throw std::runtime_error("Failed to get swapchain's texture buffer");
+    }
+    backbuffer.UnInitialize();
+    //backbuffer.Initialize(t, stenciled);
+    backbuffer.Initialize(t, false);
 }
-
 
 namespace Ext { namespace DX {
     namespace SwapChain {

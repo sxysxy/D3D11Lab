@@ -4,6 +4,7 @@
 #include <HFWindow.h>
 #include <referptr.h>
 #include "D3DDevice.h"
+#include "D3DTexture2D.h"
 
 class SwapChain : public Utility::ReferredObject {
     ComPtr<ID3D11Device> native_device;
@@ -11,6 +12,7 @@ class SwapChain : public Utility::ReferredObject {
 public:
     ComPtr<IDXGISwapChain> native_swap_chain;
     bool stenciled;
+    D3DTexture2D backbuffer;
 
     SwapChain() {
         stenciled = false;
