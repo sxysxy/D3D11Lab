@@ -54,7 +54,7 @@ void HFWindow::OnResized() {
 }
 
 void HFWindow::OnClosed() {
-	
+    PostQuitMessage(0);
 }
 
 void HFWindow::Create(const cstring &_title, int w, int h) {
@@ -162,6 +162,16 @@ namespace Ext {
 			return self;
 		}
 
+        static VALUE width(VALUE self) {
+            auto *wnd = GetNativeObject<RHFWindow>(self);
+            return INT2FIX(wnd->width);
+        }
+
+        static VALUE height(VALUE self) {
+            auto *wnd = GetNativeObject<RHFWindow>(self);
+            return INT2FIX(wnd->height);
+        }
+
 		void Init() {
 			klass = rb_define_class("HFWindow", rb_cObject);
 			rb_define_alloc_func(klass, New);
@@ -171,6 +181,8 @@ namespace Ext {
 			rb_define_method(klass, "native_handle", (rubyfunc)native_handle, 0);
 			rb_define_method(klass, "set_title", (rubyfunc)set_title, 1);
 			rb_define_method(klass, "resize", (rubyfunc)resize, 2);
+            rb_define_method(klass, "width", (rubyfunc)width, 0);
+            rb_define_method(klass, "height", (rubyfunc)height, 0);
 			
 		}
 	}

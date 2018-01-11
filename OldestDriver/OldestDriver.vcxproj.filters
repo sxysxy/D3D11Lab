@@ -27,6 +27,24 @@
     <ClInclude Include="HFWindow.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DX\D3DDevice.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DX\D3DDeviceContext.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DX\DX.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DX\SwapChain.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DX\D3DTexture2D.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DX\RenderPipeline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -42,6 +60,24 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="HFWindow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\D3DDevice.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\D3DDeviceContext.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\DX.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\SwapChain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\D3DTexture2D.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DX\RenderPipeline.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

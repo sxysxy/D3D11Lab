@@ -90,13 +90,6 @@ namespace Ext {
 			}
 		};
 
-		template<class T>
-		T *GetNativeObject(VALUE self) {
-			T *obj;
-			Data_Get_Struct(self, T, obj);
-			return obj;
-		}
-
 		extern VALUE klass;
 		void Init();
 		VALUE New(VALUE klass);

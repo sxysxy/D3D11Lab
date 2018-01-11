@@ -25,6 +25,13 @@ namespace Ext {
 		delete t;
 	}
 
+    template<class T>
+    T *GetNativeObject(VALUE self) {
+        T *obj;
+        Data_Get_Struct(self, T, obj);
+        return obj;
+    }
+
 	namespace DX {
 		extern VALUE module;
 		

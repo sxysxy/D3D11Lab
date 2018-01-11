@@ -69,6 +69,11 @@ public:
 		
 		return _ptr;
 	}
+    const _T &operator*() const {
+        assert(_ptr);
+
+        return (*_ptr);
+    }
 
 	void Release() {
 		if(_ptr == nullptr)return;

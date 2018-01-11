@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
+#pragma warning(disable:4005 4390)  
+#endif
+
 #include <vector>
 #include <algorithm>
 #include <list>
@@ -23,11 +27,13 @@
 #include <shapes.h>
 #include <errno.h>
 #include <assert.h>
+#include <HFBuffer.h>
 #include "libmsvcrt.h"
 template<class T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 #define RCHECK(x, msg) if(!(x)){MessageBoxW(0, msg, L"Error", 0); exit(0);}
+#define TCHECK(x, msg) if(!(x)) {throw std::runtime_error(msg); }
 
 #ifdef _UNICODE
 typedef std::wstring cstring;
