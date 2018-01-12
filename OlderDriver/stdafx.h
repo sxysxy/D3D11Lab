@@ -1,4 +1,7 @@
 #pragma once
+#ifdef _MSC_VER
+#pragma warning(disable:4005 4390)  
+#endif
 
 #include <mutex>
 #include <functional>
@@ -24,7 +27,6 @@
 #include <d3d11.h>
 #include <D3DX11.h>
 #include <wrl/client.h>
-#include <wincodec.h>
 #include <mmsystem.h>
 
 #include "../Utility/ReferPtr.h"

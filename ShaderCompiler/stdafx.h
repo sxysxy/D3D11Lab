@@ -6,6 +6,10 @@
 #pragma once
 
 #include "targetver.h"
+#ifdef _MSC_VER
+#pragma warning(disable:4005 4390)  
+#endif
+
 
 #include <stdio.h>
 #include <tchar.h>

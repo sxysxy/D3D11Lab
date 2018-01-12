@@ -18,4 +18,5 @@ public:
 
 	Bitmap(int w, int h);
 	Bitmap(const std::wstring &filename);
+    virtual void Release() {}
 };

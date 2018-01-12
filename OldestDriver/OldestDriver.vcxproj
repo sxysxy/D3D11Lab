@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DX\D3DBuffer.h" />
     <ClInclude Include="DX\D3DDevice.h" />
     <ClInclude Include="DX\D3DDeviceContext.h" />
     <ClInclude Include="DX\D3DTexture2D.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DX\D3DBuffer.cpp" />
     <ClCompile Include="DX\D3DDevice.cpp" />
     <ClCompile Include="DX\D3DDeviceContext.cpp" />
     <ClCompile Include="DX\D3DTexture2D.cpp" />

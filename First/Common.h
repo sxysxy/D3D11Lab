@@ -1,4 +1,7 @@
 #pragma once
+#ifdef _MSC_VER
+#pragma warning(disable:4005 4390)  
+#endif
 
 #include <Windows.h>
 #include <d3d11.h>

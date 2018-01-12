@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-
+#pragma warning(disable : 4996)
 char psf[] = "ps_4_0";
 char pvf[] = "vs_4_0";
 wchar_t buffer[1024];

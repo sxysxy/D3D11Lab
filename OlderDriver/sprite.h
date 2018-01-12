@@ -32,4 +32,6 @@ public:
 	Sprite() {}
 	Sprite(Bitmap *bmp);
 	void Render();
+
+    virtual void Release() {bitmap.Release();}
 };

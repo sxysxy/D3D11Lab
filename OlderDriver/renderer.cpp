@@ -2,6 +2,7 @@
 #include "shaders.h"
 #include "stdafx.h"
 #include "bitmap.h"
+#pragma warning(disable:4244)
 
 Renderer::Renderer() {
     _phase = RENDERER_PREPARING;
@@ -44,7 +45,8 @@ void Renderer::Initialize(HWND hWnd) {
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
         ComPtr<IDXGIDevice> dxgi_device;
-        RCHECK(SUCCEEDED(device->QueryInterface(__uuidof(IDXGIDevice),
+        ID3D11Device *d = device.Get();
+        RCHECK(SUCCEEDED(d->QueryInterface(__uuidof(IDXGIDevice),
             &dxgi_device)), L"¥¥Ω®DXGIDevice ß∞‹")
             ComPtr<IDXGIAdapter> dxgi_adpter;
         RCHECK(SUCCEEDED(dxgi_device->GetParent(__uuidof(IDXGIAdapter),

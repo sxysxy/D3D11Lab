@@ -34,7 +34,8 @@ void Renderer::Initialize() {
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
         ComPtr<IDXGIDevice> dxgi_device;
-        RCHECK(SUCCEEDED(device->QueryInterface(__uuidof(IDXGIDevice), 
+        ID3D11Device *d = device.Get();
+        RCHECK(SUCCEEDED(d->QueryInterface(__uuidof(IDXGIDevice), 
             &dxgi_device)), L"¥¥Ω®DXGIDevice ß∞‹")
         ComPtr<IDXGIAdapter> dxgi_adpter;
         RCHECK(SUCCEEDED(dxgi_device->GetParent(__uuidof(IDXGIAdapter), 
@@ -179,8 +180,8 @@ void Renderer::SetTargetTexture(Texture2D *tex) {
         current_target_view = render_target_view.Get();
         viewport.TopLeftX = 0;
         viewport.TopLeftY = 0;
-        viewport.Width = g_renderer.width;
-        viewport.Height = g_renderer.height;
+        viewport.Width = (float)g_renderer.width;
+        viewport.Height = (float)g_renderer.height;
         viewport.MaxDepth = 1.0f;
         viewport.MinDepth = 0.0f;
         context->RSSetViewports(1, &viewport);
@@ -190,8 +191,8 @@ void Renderer::SetTargetTexture(Texture2D *tex) {
         current_target_view = render_target_texture->render_target_view.Get();
         viewport.TopLeftX = 0;
         viewport.TopLeftY = 0;
-        viewport.Width = tex->width;
-        viewport.Height = tex->height;
+        viewport.Width = (float)tex->width;
+        viewport.Height = (float)tex->height;
         viewport.MaxDepth = 1.0f;
         viewport.MinDepth = 0.0f;
         context->RSSetViewports(1, &viewport);

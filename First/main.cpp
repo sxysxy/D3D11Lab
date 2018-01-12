@@ -4,7 +4,7 @@
 wchar_t title[1000];
 int WINAPI WinMain(HINSTANCE hInstance, 
             HINSTANCE hPrevInstance, LPSTR lpCmd, int nCmdShow) {
-    srand(time(NULL));
+    srand((unsigned)time(NULL));
     D3D11Application app;
     app.init(L"Demo", 600, 600);
 
