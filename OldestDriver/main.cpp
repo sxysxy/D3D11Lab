@@ -4,6 +4,10 @@
 #include <regex>
 #include <DX/D3DDevice.h>
 #include <DX/SwapChain.h>
+#include <DX/RenderPipeline.h>
+#include <DX/D3DDeviceContext.h>
+#include <DX/D3DTexture2D.h>
+
 using namespace Utility;
 
 int __cdecl cmain(int argc, char *argv_[]) {
@@ -51,6 +55,7 @@ int __cdecl cmain(int argc, char *argv_[]) {
 
 }
 
+void JustTest();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow) {
 	MSVCRT::GetFunctions();
 	
@@ -59,20 +64,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 	    return 0;
 	}
 
-	return cmain(0, nullptr);
+	//return cmain(0, nullptr);
 
-	//JustTest();
+	JustTest();
     return 0;
 }
 
 void JustTest() {
-    auto window = ReferPtr<HFWindow>::New(L"2333", 400, 400);
+    auto window = ReferPtr<HFWindow>::New(L"2333", 600, 600);
+    window->SetFixed(true);
     window->Show();
     auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
     auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get(), false);
+
+    auto pipeline = ReferPtr<RenderPipeline>::New();
+    pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"texture_vs.shader");
+    pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"texture_ps.shader");
     MSG msg;
     while (true) {
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
             if (msg.message == WM_QUIT)break;
             TranslateMessage(&msg);
             DispatchMessage(&msg);

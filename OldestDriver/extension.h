@@ -16,7 +16,7 @@ namespace Ext {
 		delete t;
 	}
 
-	static void U16ToU8(const wchar_t *ws, std::string &out, UINT cp) {
+	static void U16ToU8(const wchar_t *ws, std::string &out, UINT cp = CP_UTF8) {
 		int len = WideCharToMultiByte(cp, 0, ws, wcslen(ws), NULL, NULL, NULL, NULL);
 		char *t = new char[len + 1];
 		WideCharToMultiByte(cp, 0, ws, lstrlenW(ws), t, len, NULL, NULL);

@@ -9,10 +9,8 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
     ZeroMemory(&sd, sizeof sd);
     sd.BufferCount = 1;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.Windowed = !fullscreen;
-    if(!fullscreen) {
-        sd.OutputWindow = wnd->native_handle;
-    }
+    sd.Windowed = false;
+    sd.OutputWindow = wnd->native_handle;
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     sd.BufferDesc.Width = wnd->width;
     sd.BufferDesc.Height = wnd->height;
@@ -28,22 +26,28 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
     TCHECK(SUCCEEDED(device->native_dxgi_factory->CreateSwapChain(native_device.Get(), 
         &sd, &native_swap_chain)), "Failed to create swap chain");
 
-    if(!fullscreen)
     Resize(wnd->width, wnd->height);
+    if(fullscreen)SetFullScreen(fullscreen);
 }
 
 void SwapChain::Resize(int w, int h) {
-    native_swap_chain->ResizeBuffers(1, w, h,
+    backbuffer.UnInitialize(); //Must be placed before ResizeBuffers, otherwise ResizeBuffers will fail.
+    
+    HRESULT hr = native_swap_chain->ResizeBuffers(1, w, h,
         DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-    ID3D11Texture2D *t = nullptr;
-    native_swap_chain->GetBuffer(0, 
-        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&t));
-    if (!t) {
-        throw std::runtime_error("Failed to get swapchain's texture buffer");
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to resize swapchain's buffers.");
     }
-    backbuffer.UnInitialize();
-    //backbuffer.Initialize(t, stenciled);
-    backbuffer.Initialize(t, false);
+
+    ComPtr<ID3D11Texture2D> native_backbuffer;
+    native_swap_chain->GetBuffer(0,
+        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(native_backbuffer.GetAddressOf()));
+    if (!native_backbuffer) {
+       throw std::runtime_error("Failed to get swapchain's texture buffer");
+    }
+
+    backbuffer.Initialize(native_backbuffer.Get(), false);
+    //backbuffer.Initialize(native_backbuffer.Get(), false);
 }
 
 namespace Ext { namespace DX {
@@ -86,8 +90,13 @@ namespace Ext { namespace DX {
             }
 
             auto sc = GetNativeObject<::SwapChain>(self);
+            try{
             sc->Initialize(GetNativeObject<::D3DDevice>(argv[0]), GetNativeObject<Ext::HFWindow::RHFWindow>(argv[1]), 
-                argc > 2 ? (argv[2] == Qtrue) : false, argc > 3 ? (argv[3] == Qtrue) : true);
+                argc > 2 ? (argv[2] == Qtrue) : false, argc > 3 ? (argv[3] == Qtrue) : false);
+            }
+            catch (std::runtime_error re) {
+                rb_raise(rb_eRuntimeError, re.what());
+            }
             return self;
         }
 
@@ -95,6 +104,11 @@ namespace Ext { namespace DX {
             auto sc = GetNativeObject<::SwapChain>(self);
             sc->Resize(FIX2INT(w), FIX2INT(h));
             return Qnil;
+        }
+        
+        static VALUE backbuffer(VALUE self){
+            auto sc = GetNativeObject<::SwapChain>(self);
+            return Data_Wrap_Struct(Ext::DX::D3DTexture2D::klass, nullptr, nullptr, &sc->backbuffer);
         }
 
         void Init() {
@@ -111,7 +125,9 @@ namespace Ext { namespace DX {
 
             rb_define_method(klass, "set_fullscreen", (rubyfunc)set_fullscreen, -1);
             rb_define_method(klass, "resize", (rubyfunc)resize, 2);
+            rb_define_method(klass, "backbuffer", (rubyfunc)backbuffer, 0);
         }
     }
 }}
+
 

@@ -42,3 +42,15 @@ typedef std::wstring cstring;
 typedef std::string cstring;
 #endif
 
+class FileNotFoundException : public std::runtime_error {
+public:
+    template<class ...Arg>
+    FileNotFoundException(const Arg &...arg) :std::runtime_error(arg...) {}
+};
+
+class ImplementStillNotSupported : public std::runtime_error {
+public:
+    template<class ...Arg>
+    ImplementStillNotSupported(const Arg &...arg) :std::runtime_error(arg...) {}
+};
+

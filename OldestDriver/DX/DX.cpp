@@ -3,6 +3,7 @@
 #include "D3DDeviceContext.h"
 #include "SwapChain.h"
 #include "D3DTexture2D.h"
+#include "RenderPipeline.h"
 
 namespace Ext{
     namespace DX{
@@ -14,6 +15,7 @@ namespace Ext{
             Ext::DX::D3DDeviceContext::Init();
             Ext::DX::D3DTexture2D::Init();
             Ext::DX::SwapChain::Init();
+            Ext::DX::RenderPipeline::Init();
         }
 
        

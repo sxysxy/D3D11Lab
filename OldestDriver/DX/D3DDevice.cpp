@@ -12,7 +12,7 @@ void D3DDevice::Initialize(D3D_DRIVER_TYPE tp = D3D_DRIVER_TYPE_HARDWARE) {
     d->QueryInterface(__uuidof(IDXGIDevice), &native_dxgi_device);
     native_dxgi_device->GetParent(__uuidof(IDXGIAdapter), &native_dxgi_adapter);
     native_dxgi_adapter->GetParent(__uuidof(IDXGIFactory), &native_dxgi_factory);
-
+    immcontext = Utility::ReferPtr<D3DDeviceImmdiateContext>::New(this);
 }
 void D3DDevice::QueryAdapterInfo(DXGI_ADAPTER_DESC *d) {
     native_dxgi_adapter->GetDesc(d);
@@ -69,6 +69,11 @@ namespace Ext { namespace DX {
             return info;
         }
 
+        static VALUE immcontext(VALUE self) {
+            auto d = GetNativeObject<::D3DDevice>(self);
+            return Data_Wrap_Struct(Ext::DX::D3DDeviceContext::klass_immcontext, nullptr, nullptr, d->immcontext.Get());
+        }
+
         void Init() {
             klass = rb_define_class_under(module, "D3DDevice", rb_cObject);
             rb_define_alloc_func(klass, New);
@@ -76,6 +81,7 @@ namespace Ext { namespace DX {
             rb_define_const(klass, "SIMULATED_DEVICE", INT2FIX(D3D_DRIVER_TYPE_WARP));
             rb_define_method(klass, "initialize", (rubyfunc)initialize, -1);
             rb_define_method(klass, "query_adapter_info", (rubyfunc)query_adapter_info, 0);
+            rb_define_method(klass, "immcontext", (rubyfunc)immcontext, 0);
         }
     }
 } }

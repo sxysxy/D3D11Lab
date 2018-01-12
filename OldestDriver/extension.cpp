@@ -59,11 +59,11 @@ namespace Ext {
         VALUE klass;
         struct RubySleep {
             static void Wait(int ms) {
-                //Sleep(ms);
-                //rb_funcall(rb_mKernel, rb_intern("sleep"), 1, DBL2NUM(ms / 1000.0));
+                Sleep(ms);
+                //rb_funcall(rb_mKernel, rb_intern("sleep"), 1, DBL2NUM(ms / 1000.0));  //It also works
                 
-                if(ms)
-                    rb_thread_sleep(ms);
+                //if(ms)
+                //    rb_thread_sleep(ms); //It preforms bad.
             }
         };
         typedef ::FPSTimer<RubySleep> RTimer; 

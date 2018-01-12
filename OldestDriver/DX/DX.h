@@ -7,7 +7,5 @@ namespace Ext {
 
         extern VALUE module;
         void Init();
-   
-
    }
 }

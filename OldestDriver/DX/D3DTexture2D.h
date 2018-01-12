@@ -1,12 +1,12 @@
 #pragma once
 
-#include "D3DDevice.h"
-#include "D3DDeviceContext.h"
 #include "DX.h"
 #include <stdafx.h>
 #include <extension.h>
 
+class D3DDevice;
 class D3DTexture2D : Utility::ReferredObject{
+protected:
     int _width, _height;
     void CreateViews(ID3D11Device *d);
 public:
@@ -36,6 +36,12 @@ public:
     void CreateStencil();
 
     virtual void Release() {};
+};
+
+class LoadTextureFailed : public std::runtime_error {
+public:
+    template<class ...Arg>
+    LoadTextureFailed(const Arg &...arg):std::runtime_error(arg...) {}
 };
 
 namespace Ext {

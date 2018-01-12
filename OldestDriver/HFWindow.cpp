@@ -67,7 +67,7 @@ void HFWindow::Create(const cstring &_title, int w, int h) {
 		RtlZeroMemory(&wc, sizeof(wc));
 		wc.hbrBackground = (HBRUSH)(GetStockObject(BLACK_BRUSH));
 		wc.hCursor = LoadCursor(instance, IDC_ARROW);
-		wc.hIcon = LoadCursor(instance, IDI_WINLOGO);
+		wc.hIcon = LoadIcon(instance, IDI_WINLOGO);
 		wc.hInstance = instance;
 		wc.lpfnWndProc = HFWindow::_WndProc;
 		wc.lpszClassName = TEXT("23333");
@@ -172,6 +172,18 @@ namespace Ext {
             return INT2FIX(wnd->height);
         }
 
+        static VALUE set_fixed(VALUE self, VALUE f) {
+            auto *wnd = GetNativeObject<RHFWindow>(self);
+            wnd->SetFixed(f == Qtrue);
+            return f;
+        }
+
+        static VALUE moveto(VALUE self, VALUE x, VALUE y) {
+            auto *wnd = GetNativeObject<RHFWindow>(self);
+            wnd->MoveTo(FIX2INT(x), FIX2INT(y));
+            return Qnil;
+        }
+
 		void Init() {
 			klass = rb_define_class("HFWindow", rb_cObject);
 			rb_define_alloc_func(klass, New);
@@ -183,7 +195,9 @@ namespace Ext {
 			rb_define_method(klass, "resize", (rubyfunc)resize, 2);
             rb_define_method(klass, "width", (rubyfunc)width, 0);
             rb_define_method(klass, "height", (rubyfunc)height, 0);
-			
+		    rb_define_method(klass, "set_fixed", (rubyfunc)set_fixed, 1);
+            rb_define_method(klass, "moveto", (rubyfunc)moveto, 2);
+            rb_define_alias(klass, "move_to", "moveto");
 		}
 	}
 }

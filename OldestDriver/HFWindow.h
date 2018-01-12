@@ -69,6 +69,22 @@ public:
 
 		ShowWindow(_native_handle, SW_HIDE);
 	}
+    void SetFixed(bool fixed) {
+        UINT s = GetWindowLong(native_handle, GWL_STYLE);
+        int w = _width, h = _height;
+        if (fixed) {            
+            s &= ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
+            SetWindowLong(native_handle, GWL_STYLE, s);
+        }
+        else {
+            s |= (WS_MAXIMIZEBOX | WS_THICKFRAME);
+            SetWindowLong(native_handle, GWL_STYLE, s);
+        }
+        Resize(w, h);
+    }
+    void MoveTo(int x, int y) {
+        SetWindowPos(native_handle, 0, x, y, 0, 0, SWP_NOSIZE);
+    }
 	void Resize(int w, int h);
 
 	virtual void OnResized();
