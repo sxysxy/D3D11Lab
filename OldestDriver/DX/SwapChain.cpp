@@ -23,9 +23,12 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
     native_device = device->native_device;
     stenciled = _stenciled;
 
-    TCHECK(SUCCEEDED(device->native_dxgi_factory->CreateSwapChain(native_device.Get(), 
-        &sd, &native_swap_chain)), "Failed to create swap chain");
-
+    HRESULT hr = S_FALSE;
+    if (FAILED(hr = device->native_dxgi_factory->CreateSwapChain(native_device.Get(),
+        &sd, &native_swap_chain))) {throw std::runtime_error("Failed to create swapchain");}
+                //Usually cause a _com_error because of DXGI_STATUS_OCCLUDED.
+                //See https://msdn.microsoft.com/en-us/library/windows/desktop/cc308061(v=vs.85).aspx
+    
     Resize(wnd->width, wnd->height);
     if(fullscreen)SetFullScreen(fullscreen);
 }

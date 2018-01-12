@@ -31,8 +31,9 @@ public:
     ~SwapChain() {
         UnInitialize();
     }
-
-    virtual void Release() {}
+    virtual void Release() {
+        UnInitialize();
+    };
 
     void Present(int level = 0) {
         assert(native_swap_chain);

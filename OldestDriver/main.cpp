@@ -58,15 +58,16 @@ int __cdecl cmain(int argc, char *argv_[]) {
 void JustTest();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow) {
 	MSVCRT::GetFunctions();
+    CoInitialize(nullptr);
 	
 	if (GetFileAttributes(TEXT("main.rb")) == INVALID_FILE_ATTRIBUTES) {
 	    MessageBox(0, TEXT("main.rb not found, stop."), TEXT("Error"), MB_OK);
 	    return 0;
 	}
 
-	//return cmain(0, nullptr);
-
-	JustTest();
+	return cmain(0, nullptr);
+    
+	//JustTest();
     return 0;
 }
 
@@ -76,10 +77,16 @@ void JustTest() {
     window->Show();
     auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
     auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get(), false);
+    auto context = ReferPtr<D3DDeviceContext>::New(device.Get());
 
     auto pipeline = ReferPtr<RenderPipeline>::New();
     pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"texture_vs.shader");
     pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"texture_ps.shader");
+    pipeline->SetInputLayout(device.Get(), 
+        std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
+        std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
+    2);  
+    device->immcontext->BindPipeline(pipeline.Get());
     MSG msg;
     while (true) {
         if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
@@ -88,6 +95,8 @@ void JustTest() {
             DispatchMessage(&msg);
         }
         else {
+            context->FinishiCommandList();
+            device->immcontext->ExecuteCommandList(context.Get());
             swap_chain->Present(1);
         }
     }

@@ -2,6 +2,7 @@
 #include <extension.h>
 #include "DX.h"
 #include <stdafx.h>
+#include "D3DDeviceContext.h"
 
 void D3DDevice::Initialize(D3D_DRIVER_TYPE tp = D3D_DRIVER_TYPE_HARDWARE) {
     if(tp > 5)throw std::invalid_argument("Invalid D3DDevice type");
@@ -12,13 +13,11 @@ void D3DDevice::Initialize(D3D_DRIVER_TYPE tp = D3D_DRIVER_TYPE_HARDWARE) {
     d->QueryInterface(__uuidof(IDXGIDevice), &native_dxgi_device);
     native_dxgi_device->GetParent(__uuidof(IDXGIAdapter), &native_dxgi_adapter);
     native_dxgi_adapter->GetParent(__uuidof(IDXGIFactory), &native_dxgi_factory);
-    immcontext = Utility::ReferPtr<D3DDeviceImmdiateContext>::New(this);
+    immcontext =  Utility::ReferPtr<::D3DDeviceImmdiateContext>::New(this);
 }
 void D3DDevice::QueryAdapterInfo(DXGI_ADAPTER_DESC *d) {
     native_dxgi_adapter->GetDesc(d);
 }
-
-
 
 namespace Ext { namespace DX {
     namespace D3DDevice {

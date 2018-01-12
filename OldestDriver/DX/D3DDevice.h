@@ -19,6 +19,9 @@ public:
     ~D3DDevice() {
         UnInitialize();
     }
+    virtual void Release() {
+        UnInitialize();
+    };
 
     void Initialize(D3D_DRIVER_TYPE type);
     void UnInitialize() {
@@ -28,8 +31,6 @@ public:
         immcontext.Release();
     }
     void QueryAdapterInfo(DXGI_ADAPTER_DESC *);
-
-    virtual void Release() {};
 };
 
 namespace Ext {

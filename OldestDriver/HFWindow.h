@@ -45,7 +45,7 @@ public:
 		}
 	}
 	void Release() {
-
+        Uninitialize();
 	}
 
 	void Create(const cstring &_title, int w, int h);

@@ -12,11 +12,9 @@ namespace Utility{
 class ReferredObject{
 public:
 	int __ref_count;
-	void *__ptr_marker;
 	
 	ReferredObject(){
 		__ref_count = 0;
-		__ptr_marker = nullptr;
 	}
 	
 	int AddRefer(){
@@ -24,7 +22,12 @@ public:
 	}
 	
 	int SubRefer(){
-		return --__ref_count;
+        int r = 0;
+        if ((r = --__ref_count) == 0) {
+            Release();
+            delete this;
+        }
+        return r;
 	}
 	
 	int GetReferCount() const{
@@ -60,7 +63,7 @@ public:
 	_ppT GetAddressOf() const {
 		return &_ptr;
 	}
-	_ppT GetAddressOfAndRelease() {
+	_ppT ReleaseAndGetAddressOf() {
 		Release();
 		return GetAddressOf();
 	}
@@ -76,38 +79,32 @@ public:
     }
 
 	void Release() {
-		if(_ptr == nullptr)return;
-		if(_ptr -> __ptr_marker)_ptr -> SubRefer();
-		else{
-			_ptr -> __ptr_marker = (void *)this;
-			_ptr -> Release();
-			if(_ptr -> SubRefer() == 0){
-				delete _ptr;
-			}else if(_ptr -> __ptr_marker == (void *)this){
-				_ptr -> __ptr_marker = nullptr;
-				return;
-			}
-		}
-		_ptr = nullptr;
+		if(!_ptr)return;
+        _ptr -> SubRefer();
+        _ptr = nullptr;
 	}
 
 	explicit operator bool() const {
-		Get() != nullptr;
+		return Get() != nullptr;
 	}
 	_ppT operator&() {
-		return GetAddressOfAndRelease();
+		return ReleaseAndGetAddressOf();
 	}
 
 	_pT operator=(const _pT _optr) {
-		Release();
-		_ptr = _optr;
-		_ptr->AddRefer();
+        if ((*this) != _optr) {
+            Release();
+            _ptr = _optr;
+            _ptr->AddRefer();
+        }
 		return _ptr;
 	}
 	const ReferPtr &operator=(const ReferPtr &_optr) {
-		Release();
-		_ptr = _optr.Get();
-		_ptr->AddRefer();
+        if ((*this) != _optr) {
+            Release();
+            _ptr = _optr.Get();
+            _ptr->AddRefer();
+        }
 		return _optr;
 	}
 
@@ -119,10 +116,10 @@ public:
 	}
 
 	bool operator!=(const _pT _optr) {
-		return (*this) != _optr;
+		return _ptr != _optr;
 	}
 	bool operator!=(const ReferPtr &_optr) {
-		return (*this) != _optr;
+		return _ptr != _optr.Get();
 	}
 
 	template<typename ... _Arg>

@@ -35,6 +35,7 @@ using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 #define RCHECK(x, msg) if(!(x)){MessageBoxW(0, msg, L"Error", 0); exit(0);}
 #define TCHECK(x, msg) if(!(x)) {throw std::runtime_error(msg); }
+#define HRCHECK(x, msg) {HRESULT hr; if(FAILED(hr = x)){throw std::runtime_error(msg); } }
 
 #ifdef _UNICODE
 typedef std::wstring cstring;

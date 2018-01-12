@@ -4,8 +4,12 @@
 #include <stdafx.h>
 #include <extension.h>
 
+class D3DTexture : Utility::ReferredObject {
+
+};
+
 class D3DDevice;
-class D3DTexture2D : Utility::ReferredObject{
+class D3DTexture2D : D3DTexture {
 protected:
     int _width, _height;
     void CreateViews(ID3D11Device *d);
@@ -33,9 +37,12 @@ public:
         native_render_target_view.ReleaseAndGetAddressOf();
         native_depth_sencil_view.ReleaseAndGetAddressOf();
     }
-    void CreateStencil();
+    virtual void Release() {
+        UnInitialize();
+    };
 
-    virtual void Release() {};
+
+    void CreateStencil();
 };
 
 class LoadTextureFailed : public std::runtime_error {

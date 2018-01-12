@@ -3,3 +3,4 @@ def require_lib(lib)
 end
 
 require_lib('HFWindow.rb')
+require_lib('RenderPipeline.rb')
