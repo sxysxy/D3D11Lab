@@ -40,8 +40,8 @@ void HFWindow::Resize(int w, int h) {
 	assert(_native_handle);
 
 	RECT r = { 0, 0, w, h };
-	AdjustWindowRect(&r, wstyle, false);
-	SetWindowPos(_native_handle, 0, 0, 0, r.right, r.bottom, SWP_NOMOVE);
+	AdjustWindowRect(&r, style, false);
+	SetWindowPos(_native_handle, 0, 0, 0, r.right-r.left, r.bottom-r.top, SWP_NOMOVE);
 }
 
 void HFWindow::OnResized() {
@@ -77,10 +77,10 @@ void HFWindow::Create(const cstring &_title, int w, int h) {
 	}
 
 	RECT crect = { 0, 0, width, height };
-	AdjustWindowRect(&crect, wstyle, false);
+	AdjustWindowRect(&crect, style, false);
 	int cw = crect.right - crect.left;
 	int ch = crect.bottom - crect.top;
-	_native_handle = CreateWindow(TEXT("23333"), title.c_str(), wstyle,
+	_native_handle = CreateWindow(TEXT("23333"), title.c_str(), style,
 		(GetSystemMetrics(SM_CXSCREEN) - cw) >> 1,
 		(GetSystemMetrics(SM_CYSCREEN) - ch) >> 1,
 		cw, ch,

@@ -114,6 +114,7 @@ namespace Ext { namespace DX {
     namespace D3DTexture2D {  
         VALUE klass;
         VALUE klass_eLoadTextureError;
+        VALUE klass_D3DTexture;
 
         void Delete(::D3DTexture2D *d){
             delete d;
@@ -157,9 +158,16 @@ namespace Ext { namespace DX {
             return self;
         }
         
+        static VALUE initialize_D3DTexture(int argc, VALUE *argv, VALUE self) {
+            rb_raise(rb_eNotImpError, "class D3DTexture is not implemented.");
+            return Qnil;
+        }
+        
         void Init() {
-            klass = rb_define_class_under(module, "D3DTexture2D", rb_cObject);
+            klass_D3DTexture = rb_define_class_under(module, "D3DTexture", rb_cObject);
+            rb_define_method(klass_D3DTexture, "initialize", (rubyfunc)initialize_D3DTexture, -1);
 
+            klass = rb_define_class_under(module, "D3DTexture2D", klass_D3DTexture);
             rb_define_alloc_func(klass, New);
             rb_define_method(klass, "initialize", (rubyfunc)initialize, -1);
 

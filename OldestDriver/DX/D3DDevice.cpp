@@ -3,11 +3,15 @@
 #include "DX.h"
 #include <stdafx.h>
 #include "D3DDeviceContext.h"
-
+#ifdef _DEBUG
+#define D3D_DEVICE_CREATE_FLAG D3D11_CREATE_DEVICE_DEBUG
+#else
+#define D3D_DEVICE_CREATE_FLAG 0
+#endif
 void D3DDevice::Initialize(D3D_DRIVER_TYPE tp = D3D_DRIVER_TYPE_HARDWARE) {
     if(tp > 5)throw std::invalid_argument("Invalid D3DDevice type");
-    TCHECK(SUCCEEDED(D3D11CreateDevice(0, tp, 0, 0, 0, 0,
-        D3D11_SDK_VERSION, 
+    TCHECK(SUCCEEDED(D3D11CreateDevice(0, tp, 0, D3D_DEVICE_CREATE_FLAG, 0, 0,
+        D3D11_SDK_VERSION,
         &native_device, 0, 0)), "Failed to create D3D11 device");
     ID3D11Device *d = native_device.Get();
     d->QueryInterface(__uuidof(IDXGIDevice), &native_dxgi_device);
@@ -49,6 +53,8 @@ namespace Ext { namespace DX {
             catch (std::invalid_argument err) {
                 rb_raise(rb_eArgError, err.what());
             }
+            rb_iv_set(self, "@immcontext", 
+                Data_Wrap_Struct(Ext::DX::D3DDeviceContext::klass_immcontext, nullptr, nullptr, d->immcontext.Get()));
             return self;
         }
 
@@ -68,16 +74,15 @@ namespace Ext { namespace DX {
             return info;
         }
 
-        static VALUE immcontext(VALUE self) {
-            auto d = GetNativeObject<::D3DDevice>(self);
-            return Data_Wrap_Struct(Ext::DX::D3DDeviceContext::klass_immcontext, nullptr, nullptr, d->immcontext.Get());
+        VALUE immcontext(VALUE self) {
+            return rb_iv_get(self, "@immcontext");
         }
 
         void Init() {
             klass = rb_define_class_under(module, "D3DDevice", rb_cObject);
             rb_define_alloc_func(klass, New);
-            rb_define_const(klass, "HARDWARE_DEVICE", INT2FIX(D3D_DRIVER_TYPE_HARDWARE));
-            rb_define_const(klass, "SIMULATED_DEVICE", INT2FIX(D3D_DRIVER_TYPE_WARP));
+            rb_define_const(module, "HARDWARE_DEVICE", INT2FIX(D3D_DRIVER_TYPE_HARDWARE));
+            rb_define_const(module, "SIMULATED_DEVICE", INT2FIX(D3D_DRIVER_TYPE_WARP));
             rb_define_method(klass, "initialize", (rubyfunc)initialize, -1);
             rb_define_method(klass, "query_adapter_info", (rubyfunc)query_adapter_info, 0);
             rb_define_method(klass, "immcontext", (rubyfunc)immcontext, 0);

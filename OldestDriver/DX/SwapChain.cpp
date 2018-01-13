@@ -9,14 +9,14 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
     ZeroMemory(&sd, sizeof sd);
     sd.BufferCount = 1;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.Windowed = false;
+    sd.Windowed = !fullscreen;
     sd.OutputWindow = wnd->native_handle;
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     sd.BufferDesc.Width = wnd->width;
     sd.BufferDesc.Height = wnd->height;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    sd.BufferDesc.RefreshRate.Numerator = 1;
-    sd.BufferDesc.RefreshRate.Denominator = 0;
+    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Denominator = 1;
     sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
@@ -100,6 +100,7 @@ namespace Ext { namespace DX {
             catch (std::runtime_error re) {
                 rb_raise(rb_eRuntimeError, re.what());
             }
+            rb_iv_set(self, "@back_buffer", Data_Wrap_Struct(Ext::DX::D3DTexture2D::klass, nullptr, nullptr, &sc->backbuffer));
             return self;
         }
 
@@ -108,10 +109,9 @@ namespace Ext { namespace DX {
             sc->Resize(FIX2INT(w), FIX2INT(h));
             return Qnil;
         }
-        
-        static VALUE backbuffer(VALUE self){
-            auto sc = GetNativeObject<::SwapChain>(self);
-            return Data_Wrap_Struct(Ext::DX::D3DTexture2D::klass, nullptr, nullptr, &sc->backbuffer);
+
+        static VALUE back_buffer(VALUE self) {
+            return rb_iv_get(self, "@back_buffer");
         }
 
         void Init() {
@@ -128,7 +128,8 @@ namespace Ext { namespace DX {
 
             rb_define_method(klass, "set_fullscreen", (rubyfunc)set_fullscreen, -1);
             rb_define_method(klass, "resize", (rubyfunc)resize, 2);
-            rb_define_method(klass, "backbuffer", (rubyfunc)backbuffer, 0);
+            rb_define_method(klass, "back_buffer", (rubyfunc)back_buffer, 0);
+            rb_define_alias(klass, "backbuffer", "back_buffer");
         }
     }
 }}

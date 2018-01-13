@@ -10,8 +10,7 @@ void VertexShader::CreateFromHLSLFile(D3DDevice *device, const cstring & filenam
 
     HRESULT hr = D3DX11CompileFromFileW(filename.c_str(), nullptr, nullptr, "main", 
         "vs_4_0", 0, 0, 0, 
-        &sbuffer, &errmsg, nullptr); //cause a _com_error,,but why?, it returns S_OK...
-            
+        &sbuffer, &errmsg, nullptr); //cause a _com_error,,but why?, it returns S_OK...         
 
     if (FAILED(hr)) {
         std::string msg;
@@ -97,6 +96,21 @@ void PixelShader::CreateFromString(D3DDevice *device, const std::string & str) {
     device->native_device->CreatePixelShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
 }
 
+void D3DSampler::Initialize(D3DDevice *device) {
+    D3D11_SAMPLER_DESC desc;
+    desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // Ë«ÏßÐÔ
+    desc.AddressU = desc.AddressV = desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    desc.MipLODBias = 0.0f;
+    desc.MaxAnisotropy = 0;
+    desc.ComparisonFunc = static_cast<D3D11_COMPARISON_FUNC>(0);
+    desc.BorderColor[0] = desc.BorderColor[1] = desc.BorderColor[2] = desc.BorderColor[3] = 0.0f;
+    desc.MinLOD = 0.0f;
+    desc.MaxLOD = D3D11_FLOAT32_MAX;
+    ComPtr<ID3D11SamplerState> sampler;
+    TCHECK(SUCCEEDED(device->native_device->CreateSamplerState(&desc, native_sampler.GetAddressOf())),
+        "Fail to create sampler");
+}
+
 void RenderPipeline::SetInputLayout(D3DDevice *device, const std::string *idents, const DXGI_FORMAT *fmts, int count) {
     std::vector<D3D11_INPUT_ELEMENT_DESC> ied;
 
@@ -178,11 +192,15 @@ namespace Ext {
                 return self;
             }
 
+            static VALUE shader_initialize(int argc, VALUE *argv, VALUE self) {
+                rb_raise(rb_eNotImpError, "Note: Shader class is only an abstract class, you should not call Shader.new");
+                return Qnil;
+            }
+
             void Init() {
                 klass_eShaderCompileError = rb_define_class_under(module, "ShaderCompileError", rb_eException);
                 klass = rb_define_class_under(module, "Shader", rb_cObject);
-                rb_undef_alloc_func(klass);
-                //rb_undef_method(CLASS_OF(klass), "new");
+                rb_define_method(klass, "initialize", (rubyfunc)shader_initialize, -1);
 
                 klass_vshader = rb_define_class_under(module, "VertexShader", klass);
                 rb_define_alloc_func(klass_vshader, [](VALUE k)->VALUE{
@@ -282,9 +300,9 @@ namespace Ext {
                 rb_alias(klass, rb_intern("vshader="), rb_intern("set_vshader"));
                 rb_alias(klass, rb_intern("pshader="), rb_intern("set_pshader"));
                 //inputlayout:
-                rb_define_const(klass, "R32G32B32A32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32A32_FLOAT));
-                rb_define_const(klass, "R32G32B32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32_FLOAT));
-                rb_define_const(klass, "R32G32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32_FLOAT));
+                rb_define_const(module, "R32G32B32A32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32A32_FLOAT));
+                rb_define_const(module, "R32G32B32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32_FLOAT));
+                rb_define_const(module, "R32G32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32_FLOAT));
                 rb_define_method(klass, "set_input_layout", (rubyfunc)set_input_layout, 3);
             }
         }

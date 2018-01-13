@@ -1,23 +1,31 @@
 #encoding: utf-8
 require './libcore.rb'
-HFWindow.new("恋恋！", 500, 500) { 
-    set_fixed true; show
-    device = DX::D3DDevice.new(DX::D3DDevice::HARDWARE_DEVICE);
-    swap_chain = DX::SwapChain.new(device, self, true)
-    set_handler(:on_resized) {swap_chain.resize(width, height)}
+HFWindow.new("Demo", 500, 500) { 
+    set_fixed true
+    show
+    window = self
     set_handler(:on_closed) {exit_mainloop}
-    texture = DX::D3DTexture2D.new(device, "../CommonFiles/300px-Komeiji Koishi.jpg");
-    context = DX::D3DDeviceContext.new(device)
-    context.bind_pipeline(DX::RenderPipeline.new {
-        set_vshader DX::Shader.load_hlsl(device, "texture_vs.shader", DX::VertexShader)
-        set_pshader DX::Shader.load_hlsl(device, "texture_ps.shader", DX::PixelShader)
-        set_input_layout device, ["POSITION", "TEXCOORD"], [DX::RenderPipeline::R32G32_FLOAT]*2
-    })
+    device = DX::D3DDevice.new(DX::HARDWARE_DEVICE);
+    swap_chain = DX::SwapChain.new(device, window)
+    context = device.immcontext.bind_pipeline(DX::RenderPipeline.new {
+        set_vshader DX::Shader.load_hlsl(device, "render_vs.shader", DX::VertexShader)
+        set_pshader DX::Shader.load_hlsl(device, "render_ps.shader", DX::PixelShader)
+        set_input_layout device, ["POSITION", "COLOR"], [DX::R32G32B32_FLOAT, DX::R32G32B32A32_FLOAT]
+    }).instance_eval {
+        vecs = [[-0.5, -0.5, 0.0], [0.0, 1.0, 0.0, 1.0],
+                [-0.5, 0.5, 0.0],  [1.0, 0.0, 1.0, 1.0],
+                [0.5, -0.5, 0.0],  [0.0, 0.0, 1.0, 1.0],
+                [0.5, 0.5, 0.0],   [0.0, 1.0, 1.0, 1.0]].flatten.pack("f*")
+        bind_vbuffer(0, DX::D3DVertexBuffer.new(device, vecs.size, vecs), 4*7)
+        set_topology(DX::TOPOLOGY_TRIANGLESTRIP)
+        set_viewport(HFRect.new(0, 0, window.width, window.height), 0.0, 1.0)
+        set_render_target(swap_chain.back_buffer)
+        self
+    }
     messageloop {
-        device.immcontext.exec_command_list(context)  
+        context.clear_render_target(swap_chain.back_buffer, HFColorRGBA.new(0.0, 0.0, 0.0, 0.0));
+        context.draw(0, 4)
         swap_chain.present(DX::SwapChain::VSYNC_2_BLANK);
     }
 }
-
-
 

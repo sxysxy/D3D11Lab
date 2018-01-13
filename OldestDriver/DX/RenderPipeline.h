@@ -10,15 +10,12 @@ protected:
 public:
     //ComPtr<NativeShaderType> native_shader;
     ComPtr<ID3D10Blob> byte_code;
-    std::vector<ComPtr<ID3D11Buffer>> native_constant_buffers;
-    ComPtr<ID3D11SamplerState> native_sampler;
 
     virtual void CreateFromHLSLFile(D3DDevice *device, const cstring &filename) = 0;
     virtual void CreateFromBinaryFile(D3DDevice *device, const cstring &filename) = 0;
     virtual void CreateFromString(D3DDevice *device, const std::string &str) = 0;
     void UnInitialize() {
         byte_code.ReleaseAndGetAddressOf();
-        native_constant_buffers.clear();
     }
 
     virtual void Release() {}
@@ -101,7 +98,7 @@ public:
 class D3DSampler : public Utility::ReferredObject {
 public:
     ComPtr<ID3D11SamplerState> native_sampler;
-
+    void Initialize(D3DDevice * device);
     virtual void Release() {}
 };
 

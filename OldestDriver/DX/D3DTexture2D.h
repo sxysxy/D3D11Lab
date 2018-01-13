@@ -4,12 +4,12 @@
 #include <stdafx.h>
 #include <extension.h>
 
-class D3DTexture : Utility::ReferredObject {
+class D3DTexture : public Utility::ReferredObject {
 
 };
 
 class D3DDevice;
-class D3DTexture2D : D3DTexture {
+class D3DTexture2D : public D3DTexture {
 protected:
     int _width, _height;
     void CreateViews(ID3D11Device *d);
@@ -55,6 +55,7 @@ namespace Ext {
     namespace DX {
         namespace D3DTexture2D {
             extern VALUE klass;
+            extern VALUE klass_D3DTexture; //abstract class...
             
             void Init();
         }

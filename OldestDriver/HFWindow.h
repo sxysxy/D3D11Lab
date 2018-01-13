@@ -12,15 +12,16 @@ class HFWindow : public Utility::ReferredObject{
 
 	static LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
 
-
 public:
 
 	const HWND &native_handle = _native_handle;
 	const int &width = _width, &height = _height;
+    UINT style;
 
 	HFWindow() {
 		_native_handle = 0;
 		_width = _height = 0;
+        style = wstyle;
 	}
 	HFWindow(const cstring &_title, int w, int h) :HFWindow() {
 		Initialize(_title, w, h);
@@ -34,6 +35,7 @@ public:
 	void Initialize(const _Arg & ..._arg) {
 		_native_handle = 0;
 		_width = _height = 0;
+        style = wstyle;
 		Create(_arg ...);
 	}
 	//destructor.

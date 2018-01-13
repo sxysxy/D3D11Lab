@@ -7,6 +7,7 @@
 #include <DX/RenderPipeline.h>
 #include <DX/D3DDeviceContext.h>
 #include <DX/D3DTexture2D.h>
+#include <DX/D3DBuffer.h>
 
 using namespace Utility;
 
@@ -38,9 +39,6 @@ int __cdecl cmain(int argc, char *argv_[]) {
 		int state = 0;
 		rb_load_protect(script, 0, &state);
 		if (state) {
-            if(rb_eval_string("$DEBUG") != Qtrue);
-                //return;
-
             VALUE errorinfo = rb_errinfo();
             rb_funcall(rb_mKernel, rb_intern("show_console"), 0);
 
@@ -67,26 +65,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 
 	return cmain(0, nullptr);
     
-	//JustTest();
+	JustTest();
     return 0;
 }
 
 void JustTest() {
-    auto window = ReferPtr<HFWindow>::New(L"2333", 600, 600);
+    auto window = ReferPtr<HFWindow>::New(L"恋恋！", 600, 600);
     window->SetFixed(true);
     window->Show();
-    auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
+    auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_WARP);
     auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get(), false);
-    auto context = ReferPtr<D3DDeviceContext>::New(device.Get());
-
+    auto context = device->immcontext;
+    struct Vertex {float pos[3], color[4]; };
+    Vertex vecs[4] = {
+        { { -0.5f, -0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
+        { { -0.5f, 0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
+        { { 0.5f, -0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
+        { { 0.5f, 0.5f, 0.0f},{ 0.0f, 0.0f, 1.0f, 1.0f } }
+    }; //左下， 左上， 右下， 右上
+    auto vbuffer = ReferPtr<D3DVertexBuffer>::New(device.Get(), sizeof vecs, (void*)vecs);
     auto pipeline = ReferPtr<RenderPipeline>::New();
-    pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"texture_vs.shader");
-    pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"texture_ps.shader");
+    pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"render_vs.shader");
+    pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"render_ps.shader");
     pipeline->SetInputLayout(device.Get(), 
-        std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
-        std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32_FLOAT }).begin(),
+        std::initializer_list<std::string>({ "POSITION" , "COLOR" }).begin(),
+        std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT }).begin(),
     2);  
-    device->immcontext->BindPipeline(pipeline.Get());
+    context->BindPipeline(pipeline.Get());
+    context->BindVertexBuffer(0, vbuffer.Get(), sizeof Vertex);
+    context->SetViewport({ 0, 0, window->width, window->height });
+    context->SetRenderTarget(&swap_chain->backbuffer);
+    context->SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     MSG msg;
     while (true) {
         if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
@@ -95,8 +104,9 @@ void JustTest() {
             DispatchMessage(&msg);
         }
         else {
-            context->FinishiCommandList();
-            device->immcontext->ExecuteCommandList(context.Get());
+            context->ClearRenderTarget(&swap_chain->backbuffer, 
+                std::initializer_list<FLOAT>({ 0.0f, 0.0f, 0.0f, 1.0f }).begin());
+            context->Draw(0, 4);
             swap_chain->Present(1);
         }
     }
