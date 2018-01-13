@@ -68,7 +68,12 @@ namespace Ext {
                 }
                 auto buf = GetNativeObject<T>(self);
                 auto device = GetNativeObject<::D3DDevice>(argv[0]);
-                buf->Initialize(device, FIX2INT(argv[1]), init_data);
+                try {
+                    buf->Initialize(device, FIX2INT(argv[1]), init_data);
+                }
+                catch (std::runtime_error re) {
+                    rb_raise(rb_eRuntimeError, re.what());
+                }
                 return self;
             }
 

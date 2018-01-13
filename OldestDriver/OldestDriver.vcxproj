@@ -155,6 +155,7 @@
     <ClInclude Include="DX\D3DDeviceContext.h" />
     <ClInclude Include="DX\D3DTexture2D.h" />
     <ClInclude Include="DX\DX.h" />
+    <ClInclude Include="DX\Input.h" />
     <ClInclude Include="DX\RenderPipeline.h" />
     <ClInclude Include="DX\SwapChain.h" />
     <ClInclude Include="extension.h" />
@@ -168,6 +169,7 @@
     <ClCompile Include="DX\D3DDeviceContext.cpp" />
     <ClCompile Include="DX\D3DTexture2D.cpp" />
     <ClCompile Include="DX\DX.cpp" />
+    <ClCompile Include="DX\Input.cpp" />
     <ClCompile Include="DX\RenderPipeline.cpp" />
     <ClCompile Include="DX\SwapChain.cpp" />
     <ClCompile Include="extension.cpp" />
@@ -175,9 +177,6 @@
     <ClCompile Include="libmsvcrt.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="main.rb" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

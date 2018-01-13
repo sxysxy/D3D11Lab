@@ -96,20 +96,6 @@ void PixelShader::CreateFromString(D3DDevice *device, const std::string & str) {
     device->native_device->CreatePixelShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
 }
 
-void D3DSampler::Initialize(D3DDevice *device) {
-    D3D11_SAMPLER_DESC desc;
-    desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // Ë«ÏßÐÔ
-    desc.AddressU = desc.AddressV = desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-    desc.MipLODBias = 0.0f;
-    desc.MaxAnisotropy = 0;
-    desc.ComparisonFunc = static_cast<D3D11_COMPARISON_FUNC>(0);
-    desc.BorderColor[0] = desc.BorderColor[1] = desc.BorderColor[2] = desc.BorderColor[3] = 0.0f;
-    desc.MinLOD = 0.0f;
-    desc.MaxLOD = D3D11_FLOAT32_MAX;
-    ComPtr<ID3D11SamplerState> sampler;
-    TCHECK(SUCCEEDED(device->native_device->CreateSamplerState(&desc, native_sampler.GetAddressOf())),
-        "Fail to create sampler");
-}
 
 void RenderPipeline::SetInputLayout(D3DDevice *device, const std::string *idents, const DXGI_FORMAT *fmts, int count) {
     std::vector<D3D11_INPUT_ELEMENT_DESC> ied;
@@ -125,6 +111,11 @@ void RenderPipeline::SetInputLayout(D3DDevice *device, const std::string *idents
     }
 }
 
+void D3DSampler::CreateState(D3DDevice *device) {
+    HRESULT hr = device->native_device->CreateSamplerState(&desc, &native_sampler);
+    if(FAILED(hr))
+        throw std::runtime_error("Fail to create sampler state");
+}
 
 namespace Ext {
     namespace DX {
@@ -132,6 +123,7 @@ namespace Ext {
             VALUE klass;
             VALUE klass_vshader;
             VALUE klass_pshader;
+            VALUE klass_sampler;
             VALUE klass_eShaderCompileError;
 
             template<class T>
@@ -197,6 +189,63 @@ namespace Ext {
                 return Qnil;
             }
 
+            static void DeleteSampler(D3DSampler *s) {
+                s->SubRefer();
+            }
+
+            static VALUE sampler_initialize(VALUE self) {
+                if(rb_block_given_p())rb_obj_instance_eval(0, nullptr, self);
+                return self;
+            }
+            
+            static VALUE set_filter(VALUE self, VALUE filter, VALUE comp) {
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                sampler->SetFilter((D3D11_FILTER)FIX2INT(filter), (D3D11_COMPARISON_FUNC)FIX2INT(comp));
+                return self;
+            }
+
+            static VALUE set_uvwaddress(VALUE self, VALUE u, VALUE v, VALUE w, VALUE border_color) {
+                if (!rb_obj_is_kind_of(border_color, Ext::DX::klass_HFColor)) {
+                    rb_raise(rb_eArgError, "D3DSamper::set_uvwaddress: The 4th param should be a HFColorRGBA");
+                }
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                sampler->SetUVWAddress((D3D11_TEXTURE_ADDRESS_MODE)FIX2INT(u), (D3D11_TEXTURE_ADDRESS_MODE)FIX2INT(v), 
+                    (D3D11_TEXTURE_ADDRESS_MODE)FIX2INT(w),
+                    *GetNativeObject<Utility::Color>(border_color));
+                return self;
+            }
+            
+            static VALUE set_mip(VALUE self, VALUE min_mip, VALUE max_mip, VALUE mip_bias) {
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                sampler->SetMip((float)rb_float_value(min_mip), (float)rb_float_value(max_mip), (float)rb_float_value(mip_bias));
+                return self;
+            }
+
+            static VALUE set_max_anisotropy(VALUE self, VALUE v) {
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                sampler->SetMaxAnisotropy((unsigned)FIX2INT(v));
+                return self;
+            }
+
+            static VALUE use_default(VALUE self) {
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                sampler->UseDefault();
+                return self;
+            }
+
+            static VALUE create_state(VALUE self, VALUE device) {
+                auto sampler = GetNativeObject<D3DSampler>(self);
+                if(!rb_obj_is_kind_of(device, Ext::DX::D3DDevice::klass))
+                    rb_raise(rb_eArgError, "D3DSampler::create_state: Param device should be a DX::D3DDevice");
+                auto d = GetNativeObject<::D3DDevice>(device);
+                try {
+                    sampler->CreateState(d);
+                }
+                catch (const std::runtime_error &err) {
+                    rb_raise(rb_eRuntimeError, err.what());
+                }
+                return self;
+            }
             void Init() {
                 klass_eShaderCompileError = rb_define_class_under(module, "ShaderCompileError", rb_eException);
                 klass = rb_define_class_under(module, "Shader", rb_cObject);
@@ -224,6 +273,57 @@ namespace Ext {
                 rb_define_method(klass_pshader, "create_from_hlsl", (rubyfunc)create_from_hlsl, 2);
                 rb_define_method(klass_pshader, "create_from_binfile", (rubyfunc)create_from_binfile, 2);
                 rb_define_method(klass_pshader, "create_from_string", (rubyfunc)create_from_string, 2);
+
+                //sampler
+                klass_sampler = rb_define_class_under(module, "D3DSampler", rb_cObject);
+                rb_define_alloc_func(klass_sampler, [](VALUE k)->VALUE {
+                    auto s = new D3DSampler;
+                    return Data_Wrap_Struct(klass, nullptr, DeleteSampler, s);
+                });
+                
+                rb_define_method(klass_sampler, "initialize", (rubyfunc)sampler_initialize, 0);
+                rb_define_method(klass_sampler, "set_filter", (rubyfunc)set_filter, 2);
+                rb_define_method(klass_sampler, "set_uvwaddress", (rubyfunc)set_uvwaddress, 4);
+                rb_define_method(klass_sampler, "set_mip", (rubyfunc)set_mip, 3);
+                rb_define_method(klass_sampler, "set_max_anisotropy", (rubyfunc)set_max_anisotropy, 1);
+                rb_define_method(klass_sampler, "use_default", (rubyfunc)use_default, 0);
+                rb_define_method(klass_sampler, "create_state", (rubyfunc)create_state, 0);
+                /*
+                D3D11_FILTER_MIN_MAG_MIP_POINT
+                D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR
+                D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT
+                D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR
+                D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT
+                D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR
+                D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT
+                D3D11_FILTER_MIN_MAG_MIP_LINEAR
+                D3D11_FILTER_ANISOTROPIC
+                D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT
+                D3D11_FILTER_COMPARISON_MIN_MAG_POINT_MIP_LINEAR
+                D3D11_FILTER_COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT
+                D3D11_FILTER_COMPARISON_MIN_POINT_MAG_MIP_LINEAR
+                D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT
+                D3D11_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR
+                D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT
+                D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR
+                D3D11_FILTER_COMPARISON_ANISOTROPIC
+                D3D11_FILTER_TEXT_1BIT
+                */
+                rb_define_const(module, "FILTER_MIN_MAG_MIP_POINT", INT2FIX(D3D11_FILTER_MIN_MAG_MIP_POINT));
+                rb_define_const(module, "FILTER_MIN_MAG_MIP_LINEAR", INT2FIX(D3D11_FILTER_MIN_MAG_MIP_LINEAR));
+                rb_define_const(module, "FILTER_MIN_LINEAR_MAG_MIP_POINT", INT2FIX(D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT));
+                rb_define_const(module, "FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR", INT2FIX(D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR));
+                rb_define_const(module, "FILTER_MIN_MAG_POINT_MIP_LINEAR", INT2FIX(D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR));
+                rb_define_const(module, "FILTER_MIN_MAG_LINEAR_MIP_POINT", INT2FIX(D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT));
+                rb_define_const(module, "FILTER_ANISOTROPIC", INT2FIX(D3D11_FILTER_ANISOTROPIC));
+
+                //Address mode
+                rb_define_const(module, "ADDRESS_WRAP", INT2FIX(D3D11_TEXTURE_ADDRESS_WRAP));
+                rb_define_const(module, "ADDRESS_MIRROR", INT2FIX(D3D11_TEXTURE_ADDRESS_MIRROR));
+                rb_define_const(module, "ADDRESS_MIRROR_ONCE", INT2FIX(D3D11_TEXTURE_ADDRESS_MIRROR_ONCE));
+                rb_define_const(module, "ADDRESS_CLAMP", INT2FIX(D3D11_TEXTURE_ADDRESS_CLAMP));
+                rb_define_const(module, "ADDRESS_BORDER", INT2FIX(D3D11_TEXTURE_ADDRESS_BORDER));
+
             }
         }
 
@@ -303,7 +403,12 @@ namespace Ext {
                 rb_define_const(module, "R32G32B32A32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32A32_FLOAT));
                 rb_define_const(module, "R32G32B32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32B32_FLOAT));
                 rb_define_const(module, "R32G32_FLOAT", INT2FIX(DXGI_FORMAT_R32G32_FLOAT));
+                rb_define_const(module, "R32_FLOAT", INT2FIX(DXGI_FORMAT_R32_FLOAT));
+                rb_define_const(module, "D32_FLOAT", INT2FIX(DXGI_FORMAT_D32_FLOAT));
+                rb_define_const(module, "R8G8B8A8_UINT", INT2FIX(DXGI_FORMAT_R8G8B8A8_UINT));
                 rb_define_method(klass, "set_input_layout", (rubyfunc)set_input_layout, 3);
+                
+                
             }
         }
     }

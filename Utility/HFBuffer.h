@@ -17,10 +17,13 @@ public:
     HFBuffer() {
         _ptr = nullptr;
     }
-    HFBuffer(int s) : HFBuffer() {
+    void Initialize(int s) {
         assert(s > 0);
         _size = s;
         _ptr = (pT)malloc(sizeof(T)*size);
+    }
+    HFBuffer(int s) : HFBuffer() {
+        Initialize(s);
     }
     pT Get() {
         return _ptr;

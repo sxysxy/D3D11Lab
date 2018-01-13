@@ -8,6 +8,7 @@
 #include <DX/D3DDeviceContext.h>
 #include <DX/D3DTexture2D.h>
 #include <DX/D3DBuffer.h>
+#include <DX/Input.h>
 
 using namespace Utility;
 
@@ -53,24 +54,27 @@ int __cdecl cmain(int argc, char *argv_[]) {
 
 }
 
-void JustTest();
+void JustTest1();
+void JustTest2();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow) {
 	MSVCRT::GetFunctions();
     CoInitialize(nullptr);
-	
+	Input::Initialize();
+
 	if (GetFileAttributes(TEXT("main.rb")) == INVALID_FILE_ATTRIBUTES) {
 	    MessageBox(0, TEXT("main.rb not found, stop."), TEXT("Error"), MB_OK);
 	    return 0;
 	}
 
-	return cmain(0, nullptr);
+	//return cmain(0, nullptr);
     
-	JustTest();
+	//JustTest1();
+    JustTest2();
     return 0;
 }
 
-void JustTest() {
-    auto window = ReferPtr<HFWindow>::New(L"¡µ¡µ£°", 600, 600);
+void JustTest1() {
+    auto window = ReferPtr<HFWindow>::New(L"Demo", 600, 600);
     window->SetFixed(true);
     window->Show();
     auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_WARP);
@@ -106,6 +110,59 @@ void JustTest() {
         else {
             context->ClearRenderTarget(&swap_chain->backbuffer, 
                 std::initializer_list<FLOAT>({ 0.0f, 0.0f, 0.0f, 1.0f }).begin());
+            context->Draw(0, 4);
+            swap_chain->Present(1);
+        }
+    }
+}
+
+void JustTest2() {
+    auto window = ReferPtr<HFWindow>::New(L"¡µ¡µ!", 300, 300);
+    window->SetFixed(true);
+    window->Show();
+    auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
+    auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get());
+    auto context = device->immcontext;
+    auto texture = ReferPtr<D3DTexture2D>::New(device.Get(), L"../CommonFiles/300px-Komeiji Koishi.jpg", false);
+    auto pipeline = ReferPtr<RenderPipeline>::New();
+    pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"texture_vs.shader");
+    pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"texture_ps.shader");
+    pipeline->SetInputLayout(device.Get(),
+        std::initializer_list<std::string>({ "POSITION", "TEXCOORD" }).begin(),
+        std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32_FLOAT,  DXGI_FORMAT_R32G32_FLOAT }).begin(),
+        2);
+    context->BindPipeline(pipeline.Get());
+    auto sampler = ReferPtr<D3DSampler>::New();
+    sampler->UseDefault();
+    sampler->CreateState(device.Get());
+    context->BindShaderSampler(0, sampler.Get(), SHADERS_APPLYTO_PSHADER);
+    context->BindShaderResource(0, texture.Get(), SHADERS_APPLYTO_PSHADER);
+    struct Vertex { float pos[2], tex[2]; };
+    Vertex vecs[] = {
+        {{-1.0f, -1.0f}, {0.0f, 1.0f}},
+        {{-1.0f, 1.0f},  {0.0f, 0.0f}},
+        {{1.0f, -1.0f},  {1.0f, 1.0f}},
+        {{1.0f, 1.0f},   {1.0f, 0.0f}}
+    }; ////◊Ûœ¬£¨ ◊Û…œ£¨ ”“œ¬£¨ ”“…œ
+    auto vbuffer = ReferPtr<D3DVertexBuffer>::New(device.Get(), sizeof vecs, reinterpret_cast<void *>(vecs));
+    context->BindVertexBuffer(0, vbuffer.Get(), sizeof Vertex);
+    context->SetRenderTarget(&swap_chain->backbuffer);
+    context->SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    context->SetViewport({0, 0, window->width, window->height});
+    auto keyboard = ReferPtr<Input::Keyboard>::New(window->native_handle);
+    MSG msg;
+    while (true) {
+        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
+            if(msg.message == WM_QUIT) break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        else {
+            keyboard->ReadDeviceData();
+            if(keyboard->IsKeyPressedNow(DIK_ESCAPE))break;
+            if(keyboard->IsKeyPressedNow(DIK_A))window->MoveTo(200, 200);
+            context->ClearRenderTarget(&swap_chain->backbuffer, 
+                std::initializer_list<FLOAT>({0.0f, 0.0f, 0.0f, 0.0f}).begin());
             context->Draw(0, 4);
             swap_chain->Present(1);
         }

@@ -13,15 +13,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OlderDriver", "OlderDriver\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderCompiler", "ShaderCompiler\ShaderCompiler.vcxproj", "{AAE21600-E2FE-494D-8E0C-190D52287EBB}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utility", "Utility", "{E56BB86B-754F-48B6-B849-9268F5FABA32}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OldestDriver", "OldestDriver\OldestDriver.vcxproj", "{953A72AC-B4B9-444F-BF49-85B672676816}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utility", "Utility", "{E725ADC2-94D6-47DB-B518-700AFB9EB1D8}"
 	ProjectSection(SolutionItems) = preProject
 		Utility\embeddedruby.h = Utility\embeddedruby.h
+		Utility\fpstimer.h = Utility\fpstimer.h
 		Utility\HFBuffer.h = Utility\HFBuffer.h
 		Utility\referptr.h = Utility\referptr.h
 		Utility\shapes.h = Utility\shapes.h
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OldestDriver", "OldestDriver\OldestDriver.vcxproj", "{953A72AC-B4B9-444F-BF49-85B672676816}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
