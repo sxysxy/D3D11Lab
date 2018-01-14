@@ -117,11 +117,12 @@ namespace Ext { namespace DX {
         VALUE klass_D3DTexture;
 
         void Delete(::D3DTexture2D *d){
-            delete d;
+            d->SubRefer();
         }
         
         static VALUE New(VALUE klass){
             auto t = new ::D3DTexture2D;
+            t->AddRefer();
             return Data_Wrap_Struct(klass, nullptr, Delete, t);
         }
         

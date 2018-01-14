@@ -58,11 +58,12 @@ namespace Ext { namespace DX {
         VALUE klass;
 
         static void Delete(::SwapChain *s) {
-            delete s;
+            s->SubRefer();
         }
 
         static VALUE New(VALUE k) {
             auto *sc = new ::SwapChain;
+            sc->AddRefer();
             return Data_Wrap_Struct(k, nullptr, Delete, sc);
         }
 

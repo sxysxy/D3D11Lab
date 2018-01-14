@@ -28,11 +28,12 @@ namespace Ext { namespace DX {
         VALUE klass;
 
         void Delete(::D3DDevice *d) {
-            delete d;
+            d->SubRefer();
         }
 
         VALUE New(VALUE klass){
             auto d = new ::D3DDevice;
+            d->AddRefer();
             return Data_Wrap_Struct(klass, nullptr, Delete, d);
         }
 

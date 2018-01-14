@@ -278,6 +278,7 @@ namespace Ext {
                 klass_sampler = rb_define_class_under(module, "D3DSampler", rb_cObject);
                 rb_define_alloc_func(klass_sampler, [](VALUE k)->VALUE {
                     auto s = new D3DSampler;
+                    s->AddRefer();
                     return Data_Wrap_Struct(klass, nullptr, DeleteSampler, s);
                 });
                 

@@ -23,7 +23,7 @@ public:
 	
 	int SubRefer(){
         int r = 0;
-        if ((r = --__ref_count) == 0) {
+        if ((r = --__ref_count) <= 0) {
             Release();
             delete this;
         }

@@ -1,5 +1,6 @@
+#pragma once
 #include <stdafx.h>
-#include "DX.h"
+#define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
 namespace Input {
@@ -35,7 +36,7 @@ namespace Input {
     public:
         bool ReadDeviceData() {
             HRESULT hr;
-            buffer_index ^= 1;
+            buffer_index ^= 1;   //Ë«»º³å¼¼Êõ
             while (true) {
                 native_dinput_device->Poll();
                 Acquire();
@@ -51,9 +52,20 @@ namespace Input {
 
     class Keyboard : public Input::Device{
     public:
+        Keyboard(){}
         Keyboard(HWND www) {Initialize(www);}
         void Initialize(HWND hWnd);
         bool IsKeyPressedNow(int keycode);
         bool IsKeyPressedBefore(int keycode);
     };
 };
+
+namespace Ext {
+    namespace DX {
+        namespace Input {
+            extern VALUE module_Input;
+            extern VALUE klass_Keyboard;
+            void Init();
+        }
+    }
+}

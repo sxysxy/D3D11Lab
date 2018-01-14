@@ -66,10 +66,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 	    return 0;
 	}
 
-	//return cmain(0, nullptr);
+	return cmain(0, nullptr);
     
 	//JustTest1();
-    JustTest2();
+    //JustTest2();
     return 0;
 }
 

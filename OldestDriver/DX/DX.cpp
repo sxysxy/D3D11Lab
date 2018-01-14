@@ -5,6 +5,7 @@
 #include "D3DTexture2D.h"
 #include "RenderPipeline.h"
 #include "D3DBuffer.h"
+#include "Input.h"
 
 namespace Ext{
     namespace DX{
@@ -159,6 +160,7 @@ namespace Ext{
             Ext::DX::SwapChain::Init();
             Ext::DX::RenderPipeline::Init();
             Ext::DX::D3DBuffer::Init();
+            Ext::DX::Input::Init();
         }
        
     }

@@ -35,13 +35,13 @@ namespace Ext {
 
             template<class T>
             void Delete(T *bf) {
-                bf->UnInitialize();
-                delete bf; 
+                bf->SubRefer();
             }
 
             template<class T>
             VALUE New(VALUE k) {
                 auto b = new T;
+                b->AddRefer();
                 return Data_Wrap_Struct(k, nullptr, Delete<T>, b);
             }
 

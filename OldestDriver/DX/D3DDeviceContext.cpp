@@ -78,11 +78,13 @@ namespace Ext {
             VALUE klass_immcontext;
 
             void Delete(::D3DDeviceContext *d) {
-                delete d;
+                d->SubRefer();
             }
 
             VALUE New(VALUE k){
-                return Data_Wrap_Struct(k, nullptr, Delete, new ::D3DDeviceContext);
+                auto d = new ::D3DDeviceContext;
+                d->AddRefer();
+                return Data_Wrap_Struct(k, nullptr, Delete, d);
             }
 
             static VALUE initialize(VALUE self, VALUE _device) {

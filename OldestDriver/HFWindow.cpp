@@ -108,11 +108,12 @@ namespace Ext {
 
 		VALUE klass;
 		void Delete(RHFWindow *wnd) {
-			delete wnd;
+			wnd->SubRefer();
 		}
 
 		VALUE New(VALUE klass) {
 			RHFWindow *wnd = new RHFWindow;
+            wnd->AddRefer();
 			return Data_Wrap_Struct(klass, nullptr, Delete, wnd);
 		}
 
