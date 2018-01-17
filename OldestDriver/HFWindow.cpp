@@ -3,31 +3,28 @@
 
 bool HFWindow::_native_inited = false;
 
-LRESULT CALLBACK HFWindow::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg)
 	{
 	case WM_CREATE:
 		{
 			CREATESTRUCT * pc = (CREATESTRUCT *)lParam;
+            HFWindow * w = (HFWindow *)pc->lpCreateParams;
 			SetWindowLong(hWnd, GWL_USERDATA, (LONG)pc->lpCreateParams);
 			return 0;
 		}
 	case WM_DESTROY:
-		{
-			HFWindow * w = (HFWindow *)GetWindowLong(hWnd, GWL_USERDATA);
-			w->OnClosed();
-		}
-		return 0;
 	case WM_CLOSE:
 		{
 			HFWindow * w = (HFWindow *)GetWindowLong(hWnd, GWL_USERDATA);
-			w->OnClosed();
+            w->OnClosed();
+            return 0;
 		}
 		return 0;
 	case WM_SIZE:
 		{
 			HFWindow * w = (HFWindow *)GetWindowLong(hWnd, GWL_USERDATA);
-			w->OnResized();
+            w->OnResized();
 			return 0;
 		}
 	default:
@@ -35,15 +32,6 @@ LRESULT CALLBACK HFWindow::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 		break;
 	}
 }
-
-void HFWindow::Resize(int w, int h) {
-	assert(_native_handle);
-
-	RECT r = { 0, 0, w, h };
-	AdjustWindowRect(&r, style, false);
-	SetWindowPos(_native_handle, 0, 0, 0, r.right-r.left, r.bottom-r.top, SWP_NOMOVE);
-}
-
 void HFWindow::OnResized() {
 	assert(_native_handle);
 
@@ -69,22 +57,22 @@ void HFWindow::Create(const cstring &_title, int w, int h) {
 		wc.hCursor = LoadCursor(instance, IDC_ARROW);
 		wc.hIcon = LoadIcon(instance, IDI_WINLOGO);
 		wc.hInstance = instance;
-		wc.lpfnWndProc = HFWindow::_WndProc;
+		wc.lpfnWndProc = _WndProc;
 		wc.lpszClassName = TEXT("23333");
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 		RegisterClass(&wc);
 		_native_inited = true;
 	}
 
-	RECT crect = { 0, 0, width, height };
-	AdjustWindowRect(&crect, style, false);
-	int cw = crect.right - crect.left;
-	int ch = crect.bottom - crect.top;
-	_native_handle = CreateWindow(TEXT("23333"), title.c_str(), style,
-		(GetSystemMetrics(SM_CXSCREEN) - cw) >> 1,
-		(GetSystemMetrics(SM_CYSCREEN) - ch) >> 1,
-		cw, ch,
-		0, 0, instance, this);
+    RECT crect = { 0, 0, width, height };
+    AdjustWindowRect(&crect, style, false);
+    int cw = crect.right - crect.left;
+    int ch = crect.bottom - crect.top;
+    _native_handle = CreateWindow(TEXT("23333"), title.c_str(), style,
+        (GetSystemMetrics(SM_CXSCREEN) - cw) >> 1,
+        (GetSystemMetrics(SM_CYSCREEN) - ch) >> 1,
+        cw, ch,
+        0, 0, instance, this);
 }
 
 namespace Ext {
@@ -154,7 +142,7 @@ namespace Ext {
 			std::wstring wtitle;
 			U8ToU16(rb_string_value_cstr(&title), wtitle);
 			wnd->SetTitle(wtitle);
-			return title;
+			return self;
 		}
 
 		static VALUE resize(VALUE self, VALUE w, VALUE h) {
@@ -176,13 +164,20 @@ namespace Ext {
         static VALUE set_fixed(VALUE self, VALUE f) {
             auto *wnd = GetNativeObject<RHFWindow>(self);
             wnd->SetFixed(f == Qtrue);
-            return f;
+            return self;
         }
 
         static VALUE moveto(VALUE self, VALUE x, VALUE y) {
             auto *wnd = GetNativeObject<RHFWindow>(self);
             wnd->MoveTo(FIX2INT(x), FIX2INT(y));
-            return Qnil;
+            return self;
+        }
+
+        static VALUE get_position(VALUE self) {
+            auto window = GetNativeObject<RHFWindow>(self);
+            int x, y;
+            window->GetPosition(x, y);
+            return rb_ary_new3(2, INT2FIX(x), INT2FIX(y));
         }
 
 		void Init() {
@@ -199,6 +194,7 @@ namespace Ext {
 		    rb_define_method(klass, "set_fixed", (rubyfunc)set_fixed, 1);
             rb_define_method(klass, "moveto", (rubyfunc)moveto, 2);
             rb_define_alias(klass, "move_to", "moveto");
+            rb_define_method(klass, "get_position", (rubyfunc)get_position, 0);
 		}
 	}
 }

@@ -1,4 +1,6 @@
+#pragma once
 #include "windows.h"
+namespace Utility{
 
 template<class cls>
 struct FPSTimer {
@@ -37,3 +39,5 @@ struct SleepWait{
 	}
 };
 typedef FPSTimer<SleepWait> SleepFPSTimer;
+
+}

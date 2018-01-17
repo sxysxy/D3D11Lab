@@ -277,9 +277,9 @@ namespace Ext {
                 //sampler
                 klass_sampler = rb_define_class_under(module, "D3DSampler", rb_cObject);
                 rb_define_alloc_func(klass_sampler, [](VALUE k)->VALUE {
-                    auto s = new D3DSampler;
-                    s->AddRefer();
-                    return Data_Wrap_Struct(klass, nullptr, DeleteSampler, s);
+                    auto sampler = new D3DSampler;
+                    sampler->AddRefer();
+                    return Data_Wrap_Struct(klass_sampler, nullptr, DeleteSampler, sampler);
                 });
                 
                 rb_define_method(klass_sampler, "initialize", (rubyfunc)sampler_initialize, 0);
@@ -288,7 +288,7 @@ namespace Ext {
                 rb_define_method(klass_sampler, "set_mip", (rubyfunc)set_mip, 3);
                 rb_define_method(klass_sampler, "set_max_anisotropy", (rubyfunc)set_max_anisotropy, 1);
                 rb_define_method(klass_sampler, "use_default", (rubyfunc)use_default, 0);
-                rb_define_method(klass_sampler, "create_state", (rubyfunc)create_state, 0);
+                rb_define_method(klass_sampler, "create_state", (rubyfunc)create_state, 1);
                 /*
                 D3D11_FILTER_MIN_MAG_MIP_POINT
                 D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR
@@ -351,14 +351,14 @@ namespace Ext {
                 auto sd = GetNativeObject<::VertexShader>(s);
                 rp->SetVertexShader(sd);
                 rb_iv_set(self, "@vshader", s);
-                return s;
+                return self;
             }
             static VALUE set_pshader(VALUE self, VALUE s) {
                 auto rp = GetNativeObject<::RenderPipeline>(self);
                 auto sd = GetNativeObject<::PixelShader>(s);
                 rp->SetPixelShader(sd);
                 rb_iv_set(self, "@pshader", s);
-                return s;
+                return self;
             }
             
             static VALUE set_input_layout(VALUE self, VALUE _device, VALUE names, VALUE fmts) {
@@ -386,7 +386,7 @@ namespace Ext {
                 catch (std::runtime_error re){
                     rb_raise(rb_eRuntimeError, re.what());
                 }
-                return Qnil;
+                return self;
             }
 
             void Init() {

@@ -15,6 +15,9 @@
 #include <cmath>
 #include <functional>
 #include <string>
+#include <thread>
+#include <mutex>
+#include <NativeThread.h>
 #include <embeddedruby.h>
 #include <windows.h>
 #include <stdio.h>

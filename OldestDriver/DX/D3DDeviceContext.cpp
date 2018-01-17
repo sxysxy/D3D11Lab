@@ -4,6 +4,7 @@
 #include "DX.h"
 #include "D3DDeviceContext.h"
 #include "D3DBuffer.h"
+#include "SwapChain.h"
 
 D3DDeviceContext::D3DDeviceContext(D3DDevice *device) {
     Initialize(device);
@@ -13,7 +14,7 @@ void D3DDeviceContext::Initialize(D3DDevice *device) {
     native_device = device->native_device;
 }
 void D3DDeviceContext::FinishiCommandList() {
-    native_context->FinishCommandList(false, &native_command_list);
+    native_context->FinishCommandList(true, &native_command_list);
 }
 void D3DDeviceContext::BindPipeline(RenderPipeline *pipeline) {
     if(pipeline->vshader)
@@ -71,6 +72,53 @@ void D3DDeviceImmdiateContext::ExecuteCommandList(D3DDeviceContext *ocontext) {
     native_context->ExecuteCommandList(ocontext->native_command_list.Get(), false);
 }
 
+void D3DDeviceImmdiateContext::ExecuteCommandList(ID3D11CommandList *command_list){
+    native_context->ExecuteCommandList(command_list, false);
+}
+
+//Rendering Thread
+const RenderingThreadParam & RenderingThreadParam::operator=(const RenderingThreadParam & op) {
+    swap_chain = op.swap_chain;
+    device = op.device;
+    frame_rate = op.frame_rate;
+    return op;
+}
+Utility::ReferPtr<Utility::NativeThread<ContextInteractData>> CreateRenderingThread(RenderingThreadParam *param) {
+    RenderingThreadParam p;
+    p.operator=(*param);
+    return Utility::ReferPtr<Utility::NativeThread<ContextInteractData>>::New(0, nullptr,
+        [=](Utility::NativeThread<ContextInteractData> *th, int argc, void *argv) {
+        Utility::SleepFPSTimer timer;
+        timer.Restart(p.frame_rate);
+        auto t = th->AccessBuffer(true);
+        t->frame_rate = p.frame_rate;
+        th->AccessBuffer(false);
+        while (true) {
+            auto t = th->AccessBuffer(true);
+            if(t->frame_rate != timer.rate)
+                timer.Restart(t->frame_rate);
+            if(t->exit_flag)break;
+            while (!t->command_lists.empty()) {
+                auto d = t->command_lists.front();
+                if(d)
+                    p.device->immcontext->ExecuteCommandList(d.Get());
+                t->command_lists.pop();
+            }
+            p.swap_chain->Present();
+            th->AccessBuffer(false);
+            if(!p.swap_chain->vsync)
+                timer.Await();
+        }
+    });
+}
+void RenderingThread::Initialize(D3DDevice *d, SwapChain * s, int frame_rate) {
+    RenderingThreadParam p;
+    p.device = d;
+    p.swap_chain = s;
+    p.frame_rate = frame_rate;
+    rendering_thread = CreateRenderingThread(&p);
+}
+
 namespace Ext {
     namespace DX {
         namespace D3DDeviceContext {
@@ -110,11 +158,13 @@ namespace Ext {
             static VALUE clear_state(VALUE self) {
                 auto context = GetNativeObject<::D3DDeviceContext>(self);
                 context->ClearState();
-                return Qnil;
+                return self;
             }
             static VALUE finishi_command_list(VALUE self) { //finish
-                rb_raise(rb_eNotImpError, "D3DDeviceContext::finish_command_list implement is not supported.");
-                return Qnil;
+                //rb_raise(rb_eNotImpError, "D3DDeviceContext::finish_command_list implement is not supported.");
+                auto context = GetNativeObject<::D3DDeviceContext>(self);
+                context->FinishiCommandList();
+                return self;
             }
             VALUE exec_command_list(VALUE self, VALUE _deferred_context) {
                 if (!rb_obj_is_kind_of(_deferred_context, klass) || rb_obj_is_kind_of(_deferred_context, klass_immcontext)) {
@@ -122,9 +172,9 @@ namespace Ext {
                 }
 
                 auto context = GetNativeObject<::D3DDeviceImmdiateContext>(self);
-                auto ocontext = GetNativeObject<::D3DDeviceContext>(self);
+                auto ocontext = GetNativeObject<::D3DDeviceContext>(_deferred_context);
                 context->ExecuteCommandList(ocontext);
-                return Qnil;
+                return self;
             }
 
             static VALUE set_topology(VALUE self, VALUE topo) {
@@ -177,7 +227,7 @@ namespace Ext {
                 int len = RARRAY_LEN(reses);
                 VALUE *p = RARRAY_PTR(reses);
                 for (int i = 0; i < len; i++) {
-                    if (!rb_obj_is_kind_of(p[i], Ext::DX::D3DBuffer::klass_cbuffer))
+                    if (!rb_obj_is_kind_of(p[i], Ext::DX::D3DTexture2D::klass_D3DTexture))
                         rb_raise(rb_eArgError,
                             "D3DDeviceContext::bind_resources: The second param should be an Array filled with D3DTexture");
                     buffers.push_back(GetNativeObject<::D3DTexture2D>(p[i]));  //!
@@ -250,7 +300,7 @@ namespace Ext {
                     rb_raise(rb_eArgError, "D3DDeviceContext::bind_sampler: The second param should be a D3DSampler");
                 auto context = GetNativeObject<::D3DDeviceContext>(self);
                 auto sampler = GetNativeObject<::D3DSampler>(sam);
-                context->BindShaderSampler(slot_pos, sampler, (SHADERS_WHICH_TO_APPLAY)FIX2INT(which));
+                context->BindShaderSampler(FIX2INT(slot_pos), sampler, (SHADERS_WHICH_TO_APPLAY)FIX2INT(which));
                 return self;
             }
             static VALUE bind_samplers(VALUE self, VALUE start_slot, VALUE sams, VALUE which) {
@@ -267,6 +317,20 @@ namespace Ext {
                     buffers.push_back(GetNativeObject<D3DSampler>(p[i]));
                 }
                 context->BindShaderSampler(FIX2INT(start_slot), len, buffers.data(), (SHADERS_WHICH_TO_APPLAY)FIX2INT(which));
+                return self;
+            }
+            static VALUE update_subresource(VALUE self, VALUE buf, VALUE data) {
+                if(!rb_obj_is_kind_of(buf, Ext::DX::D3DBuffer::klass))
+                    rb_raise(rb_eArgError, "D3DDeviceContext::update_subresource: The first param should be a DX::D3DBuffer");
+                auto context = GetNativeObject<::D3DDeviceContext>(self);
+                auto buffer = GetNativeObject<::D3DBuffer>(buf);
+                if (rb_obj_is_kind_of(data, rb_cString)) {
+                    void *ptr = rb_string_value_ptr(&data);
+                    context->UpdateSubResource(buffer, ptr);
+                }
+                else if (rb_obj_is_kind_of(data, rb_cInteger)) {
+                    context->UpdateSubResource(buffer, (void*)FIX2INT(data));
+                }
                 return self;
             }
             void Init() {
@@ -297,6 +361,7 @@ namespace Ext {
                 rb_define_method(klass, "bind_resource", (rubyfunc)bind_resource, 3);
                 rb_define_method(klass, "bind_sampler", (rubyfunc)bind_sampler, 3);
                 rb_define_method(klass, "bind_samplers", (rubyfunc)bind_samplers, 3);
+                rb_define_method(klass, "update_subresource", (rubyfunc)update_subresource, 2);
                 rb_define_method(klass, "set_viewport", (rubyfunc)set_viewport, 3);
                 rb_define_method(klass, "set_render_target", (rubyfunc)set_render_target, 1);
                 rb_define_method(klass, "clear_render_target", (rubyfunc)clear_render_target, 2);
@@ -311,3 +376,59 @@ namespace Ext {
             }
         }
 } }
+
+namespace Ext {
+    namespace DX {
+        namespace RenderingThread {
+            VALUE klass;
+
+
+            static VOID Delete(::RenderingThread *rth) {
+                rth->SubRefer();
+            }
+            static VALUE New(VALUE k){
+                auto rth = new ::RenderingThread;
+                rth->AddRefer();
+                return Data_Wrap_Struct(k, nullptr, Delete, rth);
+            }
+                                                //device, swap_chain, frame_rate
+            static VALUE initialize(VALUE self, VALUE d, VALUE s, VALUE f) {
+                if(!rb_obj_is_kind_of(d, Ext::DX::D3DDevice::klass))
+                    rb_raise(rb_eArgError, "RenderingThread::initialize: The first param should be a DX::D3DDevice");
+                if(!rb_obj_is_kind_of(s, Ext::DX::SwapChain::klass))
+                    rb_raise(rb_eArgError, "RenderingThread::initialize: The second param should be a DX::SwapChain");
+                auto rth = GetNativeObject<::RenderingThread>(self);
+                rth->Initialize(GetNativeObject<::D3DDevice>(d), GetNativeObject<::SwapChain>(s), FIX2INT(f));
+                return self;
+            }
+            static VALUE set_frame_rate(VALUE self, VALUE f) {
+                auto rth = GetNativeObject<::RenderingThread>(self);
+                rth->SetFrameRate(FIX2INT(f));
+                return self;
+            }
+            static VALUE rth_terminate(VALUE self) {
+                auto rth = GetNativeObject<::RenderingThread>(self);
+                rth->Terminate();
+                return Qnil;
+            }
+            static VALUE push_command_list(VALUE self, VALUE c) {
+                if(!rb_obj_is_kind_of(c, Ext::DX::D3DDeviceContext::klass))
+                    rb_raise(rb_eArgError, 
+                        "RenderingThread::push_command_list: The first param should be a DX::D3DDeviceContext");
+                auto rth = GetNativeObject<::RenderingThread>(self);
+                rth->PushCommandList(GetNativeObject<::D3DDeviceContext>(c));
+                return self;
+            }
+            void Init() {
+                klass = rb_define_class_under(module, "RenderingThread", rb_cObject);
+                rb_define_alloc_func(klass, New);
+                rb_define_method(klass, "initialize", (rubyfunc)initialize, 3);
+                rb_define_method(klass, "set_frame_rate", (rubyfunc)set_frame_rate, 1);
+                rb_define_method(klass, "terminate", (rubyfunc)rth_terminate, 0); //void __cdecl terminate !?
+                rb_define_method(klass, "push_command_list", (rubyfunc)push_command_list, 1);
+            }
+        }
+    }
+}
+
+

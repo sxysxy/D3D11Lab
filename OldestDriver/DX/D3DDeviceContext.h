@@ -3,10 +3,12 @@
 #include <stdafx.h>
 #include "D3DTexture2D.h"
 #include "RenderPipeline.h"
+#include <NativeThread.h>
 
 class D3DBuffer;
 class D3DConstantBuffer;
 class D3DVertexBuffer;
+class SwapChain;
 enum SHADERS_WHICH_TO_APPLAY {
     SHADERS_APPLYTO_VSHADER = 1,
     SHADERS_APPLYTO_PSHADER = 2
@@ -103,6 +105,50 @@ class D3DDeviceImmdiateContext : public D3DDeviceContext {
 public:
     D3DDeviceImmdiateContext(D3DDevice *device);
     void ExecuteCommandList(D3DDeviceContext *ocontext);
+    void ExecuteCommandList(ID3D11CommandList *command_list);
+};
+
+struct RenderingThreadParam {
+    Utility::ReferPtr<SwapChain> swap_chain;
+    Utility::ReferPtr<D3DDevice> device;
+    int frame_rate;
+    const RenderingThreadParam &operator=(const RenderingThreadParam &op);
+};
+struct ContextInteractData {
+    int frame_rate;
+    std::queue<ComPtr<ID3D11CommandList>> command_lists;
+    bool exit_flag;
+    ContextInteractData() {
+        frame_rate = 0;
+        exit_flag = 0;
+    }
+};
+Utility::ReferPtr<Utility::NativeThread<ContextInteractData>> CreateRenderingThread(RenderingThreadParam *param);
+class RenderingThread : public Utility::ReferredObject{
+public:
+    Utility::ReferPtr<Utility::NativeThread<ContextInteractData>> rendering_thread;
+    RenderingThread(){}
+    RenderingThread(D3DDevice *d, SwapChain *s, int frame_rate){Initialize(d, s, frame_rate); }
+    void Initialize(D3DDevice *d, SwapChain *s, int frame_rate);
+    void UnInitialize() {rendering_thread.Release();}
+    virtual void Release() {UnInitialize(); }
+
+    void SetFrameRate(int f) {
+        auto d = rendering_thread->AccessBuffer(true);
+        d->frame_rate = f;
+        rendering_thread->AccessBuffer(false);
+    }
+    void Terminate() {
+        auto d = rendering_thread->AccessBuffer(true);
+        d->exit_flag = true;
+        rendering_thread->AccessBuffer(false);
+        rendering_thread->Join();
+    }
+    void PushCommandList(D3DDeviceContext *context) {
+        auto d = rendering_thread->AccessBuffer(true);
+        d->command_lists.push(context->native_command_list);
+        rendering_thread->AccessBuffer(false);
+    }
 };
 
 namespace Ext {
@@ -111,6 +157,15 @@ namespace Ext {
             extern VALUE klass;
             extern VALUE klass_immcontext;
 
+            void Init();
+        }
+    }
+}
+
+namespace Ext {
+    namespace DX {
+        namespace RenderingThread {
+            extern VALUE klass;
             void Init();
         }
     }

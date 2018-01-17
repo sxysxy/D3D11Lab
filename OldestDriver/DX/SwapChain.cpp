@@ -22,6 +22,7 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
     sd.SampleDesc.Quality = 0;
     native_device = device->native_device;
     stenciled = _stenciled;
+    vsync = 0; //VSYNC_NO
 
     HRESULT hr = S_FALSE;
     if (FAILED(hr = device->native_dxgi_factory->CreateSwapChain(native_device.Get(),
@@ -67,11 +68,10 @@ namespace Ext { namespace DX {
             return Data_Wrap_Struct(k, nullptr, Delete, sc);
         }
 
-        static VALUE present(int argc, VALUE *argv, VALUE self) {
+        static VALUE present(VALUE self) {
             auto sc = GetNativeObject<::SwapChain>(self);
-            if(argc > 1)rb_raise(rb_eArgError, "SwapChain::present: Wrong number of Arguments, expecting (0..1) but got %d", argc);
-            sc->Present(argc? max(0, min(FIX2INT(argv[0]), 4)) : 0);
-            return Qnil;
+            sc->Present();
+            return self;
         }
 
         static VALUE set_fullscreen(int argc, VALUE *argv, VALUE self) {
@@ -79,7 +79,7 @@ namespace Ext { namespace DX {
             auto sc = GetNativeObject<::SwapChain>(self);
             if(argc == 0)sc->SetFullScreen(true);
             else sc->SetFullScreen(argv[0] == Qtrue);
-            return Qnil;
+            return self;
         }
 
         static VALUE initialize(int argc, VALUE *argv, VALUE self) {
@@ -105,14 +105,21 @@ namespace Ext { namespace DX {
             return self;
         }
 
-        static VALUE resize(VALUE self, VALUE w, VALUE h) {
+        static VALUE resize(VALUE self, VALUE w, VALUE h) {  ///why doesn't work...
             auto sc = GetNativeObject<::SwapChain>(self);
             sc->Resize(FIX2INT(w), FIX2INT(h));
-            return Qnil;
+            //rb_iv_set(self, "@back_buffer", Data_Wrap_Struct(Ext::DX::D3DTexture2D::klass, nullptr, nullptr, &sc->backbuffer));
+            return self;
         }
 
         static VALUE back_buffer(VALUE self) {
             return rb_iv_get(self, "@back_buffer");
+        }
+
+        static VALUE set_vsync_level(VALUE self, VALUE f) {
+            auto sc = GetNativeObject<::SwapChain>(self);
+            sc->SetVsyncLevel(FIX2INT(f));
+            return self;
         }
 
         void Init() {
@@ -120,12 +127,13 @@ namespace Ext { namespace DX {
             rb_define_alloc_func(klass, New);
             rb_define_method(klass, "initialize",(rubyfunc)initialize, -1);
 
-            rb_define_const(klass, "VSYNC_NO", INT2FIX(0));
-            rb_define_const(klass, "VSYNC_1_BLANK", INT2FIX(1));
-            rb_define_const(klass, "VSYNC_2_BLANK", INT2FIX(2));
-            rb_define_const(klass, "VSYNC_3_BLANK", INT2FIX(3));
-            rb_define_const(klass, "VSYNC_4_BLANK", INT2FIX(4));
-            rb_define_method(klass, "present", (rubyfunc)present, -1);
+            rb_define_const(klass, "VSYNC_NO", INT2FIX(::SwapChain::VSYNC_NO));
+            rb_define_const(klass, "VSYNC_1_BLANK", INT2FIX(::SwapChain::VSYNC_1_BLANK));
+            rb_define_const(klass, "VSYNC_2_BLANK", INT2FIX(::SwapChain::VSYNC_2_BLANK));
+            rb_define_const(klass, "VSYNC_3_BLANK", INT2FIX(::SwapChain::VSYNC_3_BLANK));
+            rb_define_const(klass, "VSYNC_4_BLANK", INT2FIX(::SwapChain::VSYNC_4_BLANK));
+            rb_define_method(klass, "present", (rubyfunc)present, 0);
+            rb_define_method(klass, "set_vsync_level", (rubyfunc)set_vsync_level, 1);
 
             rb_define_method(klass, "set_fullscreen", (rubyfunc)set_fullscreen, -1);
             rb_define_method(klass, "resize", (rubyfunc)resize, 2);

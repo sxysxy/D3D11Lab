@@ -12,7 +12,14 @@ class SwapChain : public Utility::ReferredObject {
 public:
     ComPtr<IDXGISwapChain> native_swap_chain;
     bool stenciled;
+    int vsync;
     D3DTexture2D backbuffer;
+
+    static const int VSYNC_NO = 0;
+    static const int VSYNC_1_BLANK = 1;
+    static const int VSYNC_2_BLANK = 2;
+    static const int VSYNC_3_BLANK = 3;
+    static const int VSYNC_4_BLANK = 4;
 
     SwapChain() {
         stenciled = false;
@@ -35,16 +42,20 @@ public:
         UnInitialize();
     };
 
-    void Present(int level = 0) {
+    void Present() {
         assert(native_swap_chain);
 
-        native_swap_chain->Present(level, 0);
+        native_swap_chain->Present(vsync, 0);
     }
 
     void SetFullScreen(bool fullscreen = true) {
         assert(native_swap_chain);
 
         native_swap_chain->SetFullscreenState(fullscreen, nullptr);
+    }
+
+    void SetVsyncLevel(int level) {
+        vsync = max(0, min(level, 4));
     }
 
     void Resize(int w, int h);

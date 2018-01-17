@@ -1,6 +1,10 @@
 #pragma once
 #include "stdafx.h"
 #include "extension.h"
+#include "NativeThread.h"
+
+const UINT WM_EXITLOOP = (WM_USER + 2333);
+const UINT WM_PROCESS_FLAG = (WM_USER+2332);
 
 class HFWindow : public Utility::ReferredObject{
 	cstring title;
@@ -10,13 +14,29 @@ class HFWindow : public Utility::ReferredObject{
 	static const UINT wstyle = WS_OVERLAPPEDWINDOW;
 	static bool _native_inited;
 
-	static LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam); 
-
+public:
+    friend LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
 
 	const HWND &native_handle = _native_handle;
 	const int &width = _width, &height = _height;
     UINT style;
+    /*
+    struct InteractData {
+        int closed_flag;
+        int sized_flag;
+        int set_fixed_flag;
+        int show_flag;
+        int close_flag;
+        int resize_flag;
+        int resize_w, resize_h;
+        int set_title_flag;
+        wchar_t *set_title_string;
+        int moveto_flag;
+        int moveto_x, moveto_y;
+    };
+    Utility::ReferPtr<NativeThread<InteractData>> message_thread;
+    */
 
 	HFWindow() {
 		_native_handle = 0;
@@ -46,7 +66,7 @@ public:
 			_native_handle = 0;
 		}
 	}
-	void Release() {
+	virtual void Release() {
         Uninitialize();
 	}
 
@@ -55,26 +75,41 @@ public:
 	cstring GetTitle() {
 		return title;
 	}
-	void SetTitle(const cstring &t) {
-		assert(_native_handle);
+   
+    void GetPosition(int *x, int *y) {
+        assert(native_handle);
+        RECT r;
+        GetWindowRect(native_handle, &r);
+        if(x)*x = r.left; if(y)*y = r.top;
+    }
+    void GetPosition(int &x, int &y) {
+        assert(native_handle);
+        RECT r;
+        GetWindowRect(native_handle, &r);
+        x = r.left, y = r.top;
+    }
 
-		title = t;
-		SetWindowText(_native_handle, title.c_str());
-	}
-	void Show() {
-		assert(_native_handle);
 
-		ShowWindow(_native_handle, SW_NORMAL);
-	}
-	void Hide() {
-		assert(_native_handle);
+    void SetTitle(const cstring &t) {
+        assert(_native_handle);
 
-		ShowWindow(_native_handle, SW_HIDE);
-	}
+        title = t;
+        SetWindowText(_native_handle, title.c_str());
+    }
+    void Show() {
+        assert(_native_handle);
+
+        ShowWindow(_native_handle, SW_NORMAL);
+    }
+    void Hide() {
+        assert(_native_handle);
+
+        ShowWindow(_native_handle, SW_HIDE);
+    }
     void SetFixed(bool fixed) {
         UINT s = GetWindowLong(native_handle, GWL_STYLE);
         int w = _width, h = _height;
-        if (fixed) {            
+        if (fixed) {
             s &= ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
             SetWindowLong(native_handle, GWL_STYLE, s);
         }
@@ -87,7 +122,16 @@ public:
     void MoveTo(int x, int y) {
         SetWindowPos(native_handle, 0, x, y, 0, 0, SWP_NOSIZE);
     }
-	void Resize(int w, int h);
+
+    void Resize(int w, int h) {
+        assert(_native_handle);
+
+        RECT r = { 0, 0, w, h };
+        AdjustWindowRect(&r, style, false);
+        SetWindowPos(_native_handle, 0, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE);
+    }
+
+
 
 	virtual void OnResized();
 	virtual void OnClosed();

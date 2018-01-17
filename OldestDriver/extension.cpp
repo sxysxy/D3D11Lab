@@ -34,19 +34,17 @@ namespace Ext {
         rb_define_module_function(rb_mKernel, "exit_process", (rubyfunc)exit_process, 1);
     }
 
-    const UINT WM_EXITLOOP = (WM_USER+2333);
+   
+    
     VALUE messageloop(VALUE self) {
         MSG msg;
-        while (true) {
+        while(true){
             if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
                 if(msg.message == WM_EXITLOOP)break;
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-            else {
-
-                if (rb_block_given_p())rb_yield(Qnil);
-            }
+            if(rb_block_given_p())rb_yield(Qnil);
         }
         return Qnil;
     }
@@ -59,14 +57,14 @@ namespace Ext {
         VALUE klass;
         struct RubySleep {
             static void Wait(int ms) {
-                Sleep(ms);
-                //rb_funcall(rb_mKernel, rb_intern("sleep"), 1, DBL2NUM(ms / 1000.0));  //It also works
+                //Sleep(ms);
+                rb_funcall(rb_mKernel, rb_intern("sleep"), 1, DBL2NUM(ms / 1000.0));  //It also works
                 
                 //if(ms)
                 //    rb_thread_sleep(ms); //It preforms bad.
             }
         };
-        typedef ::FPSTimer<RubySleep> RTimer; 
+        typedef Utility::FPSTimer<RubySleep> RTimer; 
 
         void Delete(RTimer *t) {
             delete t;

@@ -54,7 +54,6 @@ int __cdecl cmain(int argc, char *argv_[]) {
 
 }
 
-void JustTest1();
 void JustTest2();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow) {
 	MSVCRT::GetFunctions();
@@ -68,53 +67,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 
 	return cmain(0, nullptr);
     
-	//JustTest1();
-    //JustTest2();
+    JustTest2();
     return 0;
 }
 
-void JustTest1() {
-    auto window = ReferPtr<HFWindow>::New(L"Demo", 600, 600);
-    window->SetFixed(true);
-    window->Show();
-    auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_WARP);
-    auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get(), false);
-    auto context = device->immcontext;
-    struct Vertex {float pos[3], color[4]; };
-    Vertex vecs[4] = {
-        { { -0.5f, -0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { -0.5f, 0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { 0.5f, -0.5f, 0.0f } ,{ 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { 0.5f, 0.5f, 0.0f},{ 0.0f, 0.0f, 1.0f, 1.0f } }
-    }; //左下， 左上， 右下， 右上
-    auto vbuffer = ReferPtr<D3DVertexBuffer>::New(device.Get(), sizeof vecs, (void*)vecs);
-    auto pipeline = ReferPtr<RenderPipeline>::New();
-    pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"render_vs.shader");
-    pipeline->pshader = PixelShader::LoadHLSLFile(device.Get(), L"render_ps.shader");
-    pipeline->SetInputLayout(device.Get(), 
-        std::initializer_list<std::string>({ "POSITION" , "COLOR" }).begin(),
-        std::initializer_list<DXGI_FORMAT>({ DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT }).begin(),
-    2);  
-    context->BindPipeline(pipeline.Get());
-    context->BindVertexBuffer(0, vbuffer.Get(), sizeof Vertex);
-    context->SetViewport({ 0, 0, window->width, window->height });
-    context->SetRenderTarget(&swap_chain->backbuffer);
-    context->SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    MSG msg;
-    while (true) {
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
-            if (msg.message == WM_QUIT)break;
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            context->ClearRenderTarget(&swap_chain->backbuffer, 
-                std::initializer_list<FLOAT>({ 0.0f, 0.0f, 0.0f, 1.0f }).begin());
-            context->Draw(0, 4);
-            swap_chain->Present(1);
-        }
-    }
-}
 
 void JustTest2() {
     auto window = ReferPtr<HFWindow>::New(L"恋恋!", 300, 300);
@@ -122,7 +78,7 @@ void JustTest2() {
     window->Show();
     auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
     auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get());
-    auto context = device->immcontext;
+    auto context = ReferPtr<D3DDeviceContext>::New(device.Get());
     auto texture = ReferPtr<D3DTexture2D>::New(device.Get(), L"../CommonFiles/300px-Komeiji Koishi.jpg", false);
     auto pipeline = ReferPtr<RenderPipeline>::New();
     pipeline->vshader = VertexShader::LoadHLSLFile(device.Get(), L"texture_vs.shader");
@@ -150,21 +106,24 @@ void JustTest2() {
     context->SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     context->SetViewport({0, 0, window->width, window->height});
     auto keyboard = ReferPtr<Input::Keyboard>::New(window->native_handle);
+    auto rth = ReferPtr<RenderingThread>::New(device.Get(), swap_chain.Get(), 60);
+    Utility::SleepFPSTimer timer;
+    timer.Restart(60);
     MSG msg;
     while (true) {
-        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
-            if(msg.message == WM_QUIT) break;
+        if(PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0){
+            if(msg.message == WM_QUIT)break;
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
         else {
-            keyboard->ReadDeviceData();
-            if(keyboard->IsKeyPressedNow(DIK_ESCAPE))break;
-            if(keyboard->IsKeyPressedNow(DIK_A))window->MoveTo(200, 200);
             context->ClearRenderTarget(&swap_chain->backbuffer, 
                 std::initializer_list<FLOAT>({0.0f, 0.0f, 0.0f, 0.0f}).begin());
             context->Draw(0, 4);
-            swap_chain->Present(1);
+            context->FinishiCommandList();
+            rth->PushCommandList(context.Get());
+            timer.Await();
         }
     }
+    rth->Terminate();
 }

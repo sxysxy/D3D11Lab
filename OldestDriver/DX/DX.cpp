@@ -161,6 +161,7 @@ namespace Ext{
             Ext::DX::RenderPipeline::Init();
             Ext::DX::D3DBuffer::Init();
             Ext::DX::Input::Init();
+            Ext::DX::RenderingThread::Init();
         }
        
     }
