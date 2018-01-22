@@ -10,9 +10,12 @@
 #endif
 void D3DDevice::Initialize(D3D_DRIVER_TYPE tp = D3D_DRIVER_TYPE_HARDWARE) {
     if(tp > 5)throw std::invalid_argument("Invalid D3DDevice type");
-    TCHECK(SUCCEEDED(D3D11CreateDevice(0, tp, 0, D3D_DEVICE_CREATE_FLAG, 0, 0,
+    HRESULT hr;
+    if (FAILED(hr = D3D11CreateDevice(0, tp, 0, D3D_DEVICE_CREATE_FLAG, 0, 0,
         D3D11_SDK_VERSION,
-        &native_device, 0, 0)), "Failed to create D3D11 device");
+        &native_device, 0, 0))) {
+        MAKE_ERRMSG<std::runtime_error>("Fail to create D3DDevice, Error code:", hr);
+    }
     ID3D11Device *d = native_device.Get();
     d->QueryInterface(__uuidof(IDXGIDevice), &native_dxgi_device);
     native_dxgi_device->GetParent(__uuidof(IDXGIAdapter), &native_dxgi_adapter);
@@ -67,10 +70,10 @@ namespace Ext { namespace DX {
 
             std::string s;
             U16ToU8(d.Description, s, CP_UTF8);
-            rb_hash_aset(info, ID2SYM(rb_intern("description")),rb_str_new(s.c_str(), s.length()));
-            rb_hash_aset(info, ID2SYM(rb_intern("dedicated_vide_memory")), INT2NUM(d.DedicatedVideoMemory / 1024 / 1024));
-            rb_hash_aset(info, ID2SYM(rb_intern("delicated_system_memory")), INT2NUM(d.DedicatedSystemMemory / 1024 / 1024));
-            rb_hash_aset(info, ID2SYM(rb_intern("shared_system_memory")), INT2NUM(d.SharedSystemMemory / 1024 / 1024));
+            rb_hash_aset(info, ID2SYM(rb_intern("description")),rb_str_new(s.c_str(), (int)s.length()));
+            rb_hash_aset(info, ID2SYM(rb_intern("dedicated_vide_memory")), LONG2NUM((long)(d.DedicatedVideoMemory / 1024 / 1024)));
+            rb_hash_aset(info, ID2SYM(rb_intern("delicated_system_memory")), LONG2NUM((long)(d.DedicatedSystemMemory / 1024 / 1024)));
+            rb_hash_aset(info, ID2SYM(rb_intern("shared_system_memory")), LONG2NUM((long)(d.SharedSystemMemory / 1024 / 1024)));
 
             return info;
         }

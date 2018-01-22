@@ -55,6 +55,7 @@ int __cdecl cmain(int argc, char *argv_[]) {
 }
 
 void JustTest2();
+void JustTest3();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, int nShow) {
 	MSVCRT::GetFunctions();
     CoInitialize(nullptr);
@@ -66,8 +67,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmd, in
 	}
 
 	return cmain(0, nullptr);
-    
-    JustTest2();
+    //JustTest2();
+    JustTest3();
     return 0;
 }
 
@@ -124,6 +125,29 @@ void JustTest2() {
             rth->PushCommandList(context.Get());
             timer.Await();
         }
+    }
+    rth->Terminate();
+}
+
+void JustTest3() {
+    auto window = ReferPtr<HFWindow>::New(L"Deep Dark Fantasy", 600, 600);
+    window->SetFixed(true);
+    window->Show();
+    auto device = ReferPtr<D3DDevice>::New(D3D_DRIVER_TYPE_HARDWARE);
+    auto swap_chain = ReferPtr<SwapChain>::New(device.Get(), window.Get(),false, true);
+    auto context = ReferPtr<D3DDeviceContext>::New(device.Get());
+    
+    auto rth = ReferPtr<RenderingThread>::New(device.Get(), swap_chain.Get(), 60);
+    SleepFPSTimer timer;
+    timer.Restart(60);
+    MSG msg;
+    while (true) {
+        if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
+            if(msg.message == WM_QUIT)break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        timer.Await();
     }
     rth->Terminate();
 }

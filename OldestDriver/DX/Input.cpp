@@ -9,7 +9,8 @@ namespace Input {
         if(!initialized){
             HRESULT hr = DirectInput8Create(GetModuleHandle(0), 0x0800,
                 IID_IDirectInput8, &native_dinput_object, nullptr);
-            if(FAILED(hr))throw std::runtime_error("Failed to create direct input 8 object");
+            if(FAILED(hr))
+                MAKE_ERRMSG<std::runtime_error>("Failed to create DirectInput8, Error code:", hr);
             initialized = true;
         }
     }
@@ -21,11 +22,14 @@ namespace Input {
         data_buffer[1] = ReferPtr<HFBuffer<char>>::New(256);
         buffer_index = 0;
         HRESULT hr = native_dinput_object->CreateDevice(GUID_SysKeyboard, &native_dinput_device, nullptr);
-        if (FAILED(hr))throw std::runtime_error("Failed to create keyboard device object");
+        if (FAILED(hr))
+            MAKE_ERRMSG<std::runtime_error>("Failed to create keyboard device object, Error code:", hr);
         hr = native_dinput_device->SetDataFormat(&c_dfDIKeyboard);
-        if (FAILED(hr))throw std::runtime_error("Failed to set keyboard data format");
+        if (FAILED(hr))
+            MAKE_ERRMSG<std::runtime_error>("Failed to set keyboard data format, Error code:", hr);
         hr = native_dinput_device->SetCooperativeLevel(hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-        if(FAILED(hr))throw std::runtime_error("Failed to set keyboard cooperation leval");
+        if(FAILED(hr))
+            MAKE_ERRMSG<std::runtime_error>("Failed to set keyboard cooperation level, Error code:", hr);
         DIPROPDWORD property;
         property.diph.dwSize = sizeof DIPROPDWORD;
         property.diph.dwHeaderSize = sizeof DIPROPHEADER;
@@ -33,7 +37,8 @@ namespace Input {
         property.diph.dwHow = DIPH_DEVICE;
         property.dwData = 16;
         hr = native_dinput_device->SetProperty(DIPROP_BUFFERSIZE, &property.diph);
-        if (FAILED(hr)) throw std::runtime_error("Failed to set keyboard property");
+        if (FAILED(hr)) 
+            MAKE_ERRMSG<std::runtime_error>("Failed to set keyboard property, Error code:", hr);
         ReadDeviceData();
     }
     bool Keyboard::IsKeyPressedNow(int keycode) {
@@ -45,13 +50,13 @@ namespace Input {
     void Mouse::Initialize(HWND hwnd){
         HRESULT hr;
         if (FAILED(hr = Input::native_dinput_object->CreateDevice(GUID_SysMouse, &native_dinput_device, nullptr))) {
-            throw std::runtime_error("Fail to Create Mouse native direct input object");
+            MAKE_ERRMSG<std::runtime_error>("Failed to create native direct input device(Mouse) object, Error code:", hr);
         }
         if (FAILED(hr = native_dinput_device->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE))) {
-            throw std::runtime_error("Fail to set mouse cooperation level");
+            MAKE_ERRMSG<std::runtime_error>("Failed to set mouse cooperation level, Error code:", hr);
         }
         if (FAILED(hr = native_dinput_device->SetDataFormat(&c_dfDIMouse))) {
-            throw std::runtime_error("Fail to set mouse data format");
+            MAKE_ERRMSG<std::runtime_error>("Failed to set mouse data format, Error code:", hr);
         }
         DIPROPDWORD dipdw;
         dipdw.diph.dwSize = sizeof(DIPROPDWORD);
@@ -61,7 +66,7 @@ namespace Input {
         dipdw.dwData = sizeof(DIMOUSESTATE);
         hr = native_dinput_device->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
         if (FAILED(hr)) {
-            throw std::runtime_error("Fail to set mouse property");
+            MAKE_ERRMSG<std::runtime_error>("Failed to set mouse property Error code:", hr);
         }
         data_buffer.Initialize(1);
         ReadDeviceData();

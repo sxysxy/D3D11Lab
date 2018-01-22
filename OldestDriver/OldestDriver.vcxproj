@@ -156,6 +156,7 @@
     <ClInclude Include="DX\D3DTexture2D.h" />
     <ClInclude Include="DX\DX.h" />
     <ClInclude Include="DX\Input.h" />
+    <ClInclude Include="DX\Math.h" />
     <ClInclude Include="DX\RenderPipeline.h" />
     <ClInclude Include="DX\SwapChain.h" />
     <ClInclude Include="extension.h" />
@@ -170,6 +171,7 @@
     <ClCompile Include="DX\D3DTexture2D.cpp" />
     <ClCompile Include="DX\DX.cpp" />
     <ClCompile Include="DX\Input.cpp" />
+    <ClCompile Include="DX\Math.cpp" />
     <ClCompile Include="DX\RenderPipeline.cpp" />
     <ClCompile Include="DX\SwapChain.cpp" />
     <ClCompile Include="extension.cpp" />

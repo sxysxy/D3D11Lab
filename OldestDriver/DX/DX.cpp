@@ -6,6 +6,7 @@
 #include "RenderPipeline.h"
 #include "D3DBuffer.h"
 #include "Input.h"
+#include "Math.h"
 
 namespace Ext{
     namespace DX{
@@ -162,6 +163,7 @@ namespace Ext{
             Ext::DX::D3DBuffer::Init();
             Ext::DX::Input::Init();
             Ext::DX::RenderingThread::Init();
+           // Ext::DX::Math::Init();
         }
        
     }

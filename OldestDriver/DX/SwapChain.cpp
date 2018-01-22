@@ -26,12 +26,14 @@ void SwapChain::Initialize(D3DDevice * device, HFWindow * wnd, bool fullscreen =
 
     HRESULT hr = S_FALSE;
     if (FAILED(hr = device->native_dxgi_factory->CreateSwapChain(native_device.Get(),
-        &sd, &native_swap_chain))) {throw std::runtime_error("Failed to create swapchain");}
+        &sd, &native_swap_chain))) 
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create SwapChain, Error code:", hr);
                 //Usually cause a _com_error because of DXGI_STATUS_OCCLUDED.
                 //See https://msdn.microsoft.com/en-us/library/windows/desktop/cc308061(v=vs.85).aspx
     
     Resize(wnd->width, wnd->height);
-    if(fullscreen)SetFullScreen(fullscreen);
+    if(fullscreen)
+        SetFullScreen(fullscreen);
 }
 
 void SwapChain::Resize(int w, int h) {
@@ -40,17 +42,17 @@ void SwapChain::Resize(int w, int h) {
     HRESULT hr = native_swap_chain->ResizeBuffers(1, w, h,
         DXGI_FORMAT_R8G8B8A8_UNORM, 0);
     if (FAILED(hr)) {
-        throw std::runtime_error("Failed to resize swapchain's buffers.");
+        MAKE_ERRMSG<std::runtime_error>("Fail to resize swapchain buffers, Error code:", hr);
     }
 
     ComPtr<ID3D11Texture2D> native_backbuffer;
     native_swap_chain->GetBuffer(0,
         __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(native_backbuffer.GetAddressOf()));
     if (!native_backbuffer) {
-       throw std::runtime_error("Failed to get swapchain's texture buffer");
+        MAKE_ERRMSG<std::runtime_error>("Fail to get swapchain buffers, Error code:", hr);
     }
 
-    backbuffer.Initialize(native_backbuffer.Get(), false);
+    backbuffer.Initialize(native_backbuffer.Get(), stenciled);
     //backbuffer.Initialize(native_backbuffer.Get(), false);
 }
 

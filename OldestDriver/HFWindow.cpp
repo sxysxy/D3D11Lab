@@ -1,36 +1,90 @@
 #include "HFWindow.h"
 #include "extension.h"
 
-bool HFWindow::_native_inited = false;
+#ifdef _WIN64
+#define SetWindowLongV SetWindowLongPtr
+#define GetWindowLongV GetWindowLongPtr
+#else 
+#define SetWindowLongV SetWindowLong
+#define GetWindowLongV GetWindowLong
+#endif
 
-LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+bool HFWindow::_native_inited = false;
+LRESULT CALLBACK HFWindow::_WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg)
 	{
 	case WM_CREATE:
 		{
 			CREATESTRUCT * pc = (CREATESTRUCT *)lParam;
             HFWindow * w = (HFWindow *)pc->lpCreateParams;
-			SetWindowLong(hWnd, GWL_USERDATA, (LONG)pc->lpCreateParams);
+			SetWindowLongV(hWnd, GWLP_USERDATA, (PTR_VALUE_T)pc->lpCreateParams);
 			return 0;
 		}
 	case WM_DESTROY:
 	case WM_CLOSE:
 		{
-			HFWindow * w = (HFWindow *)GetWindowLong(hWnd, GWL_USERDATA);
+			HFWindow * w = (HFWindow *)GetWindowLongV(hWnd, GWLP_USERDATA);
             w->OnClosed();
             return 0;
 		}
 		return 0;
 	case WM_SIZE:
 		{
-			HFWindow * w = (HFWindow *)GetWindowLong(hWnd, GWL_USERDATA);
+			HFWindow * w = (HFWindow *)GetWindowLongV(hWnd, GWLP_USERDATA);
             w->OnResized();
 			return 0;
 		}
-	default:
-		return DefWindowProc(hWnd, uMsg, wParam, lParam);
-		break;
+    case WM_SYSCOMMAND: 
+        {
+            HFWindow * w = (HFWindow *)GetWindowLongV(hWnd, GWLP_USERDATA);
+            switch (wParam & 0xfff0){
+            case SC_MOVE:
+                if (!w->__ncl_button_down) {
+                    w->__ncl_button_down = true;
+                    GetWindowRect(hWnd, &w->__ncl_down_rect);
+                    GetCursorPos(&w->__ncl_down_pos);
+                    SetCapture(hWnd);
+                    return 0;
+                }
+            
+            case SC_KEYMENU:
+            case SC_MOUSEMENU:
+                return 0;
+            default:
+                break;
+            }
+            break;  //not return 0;
+        }
+    case WM_LBUTTONUP:
+    case WM_NCLBUTTONUP:
+        {
+            HFWindow *w = (HFWindow *)GetWindowLongV(hWnd, GWLP_USERDATA);
+            w->__ncl_button_down = false;
+            ReleaseCapture();
+            break;
+        }
+    case WM_NCMOUSEMOVE:
+    case WM_MOUSEMOVE:
+        {
+            HFWindow *w = (HFWindow *)GetWindowLongV(hWnd, GWLP_USERDATA);
+            if (w->__ncl_button_down) {
+                POINT pt;
+                GetCursorPos(&pt);
+                const int dx = w->__ncl_down_pos.x - pt.x;
+                const int dy = w->__ncl_down_pos.y - pt.y;
+                w->__ncl_down_rect.left -= dx;
+                w->__ncl_down_rect.top -= dy;
+                w->__ncl_down_pos = pt;
+                w->MoveTo(w->__ncl_down_rect.left, w->__ncl_down_rect.top);
+            }
+            break;
+        }
+    case WM_NCRBUTTONDOWN:
+        return 0;
+    default:
+        break;
 	}
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 void HFWindow::OnResized() {
 	assert(_native_handle);
@@ -85,7 +139,7 @@ namespace Ext {
 		}
 
 		void RHFWindow::OnClosed() {
-			HFWindow::OnClosed();
+			//HFWindow::OnClosed();
 			int s = 0;
 			rb_protect([](VALUE obj) -> VALUE {return rb_funcall(obj, rb_intern("call_handler"), 1, ID2SYM(rb_intern("on_closed"))); }, self, &s);
 			if (s) {

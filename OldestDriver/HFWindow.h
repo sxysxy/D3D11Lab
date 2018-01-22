@@ -11,12 +11,17 @@ class HFWindow : public Utility::ReferredObject{
 	HWND _native_handle;
 	int _width, _height;
 
-	static const UINT wstyle = WS_OVERLAPPEDWINDOW;
+	static const UINT wstyle = WS_OVERLAPPEDWINDOW  & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
 	static bool _native_inited;
 
 public:
-    friend LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+   static LRESULT CALLBACK _WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
+    //pretend to be private.
+    bool __ncl_button_down;
+    RECT __ncl_down_rect;
+    POINT __ncl_down_pos;
+    //为了避免拖拽窗口导致消息处理过程阻塞。。。
 
 	const HWND &native_handle = _native_handle;
 	const int &width = _width, &height = _height;
@@ -42,6 +47,7 @@ public:
 		_native_handle = 0;
 		_width = _height = 0;
         style = wstyle;
+        __ncl_button_down = false;
 	}
 	HFWindow(const cstring &_title, int w, int h) :HFWindow() {
 		Initialize(_title, w, h);
@@ -56,6 +62,7 @@ public:
 		_native_handle = 0;
 		_width = _height = 0;
         style = wstyle;
+        __ncl_button_down = false;
 		Create(_arg ...);
 	}
 	//destructor.
@@ -130,8 +137,6 @@ public:
         AdjustWindowRect(&r, style, false);
         SetWindowPos(_native_handle, 0, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE);
     }
-
-
 
 	virtual void OnResized();
 	virtual void OnClosed();

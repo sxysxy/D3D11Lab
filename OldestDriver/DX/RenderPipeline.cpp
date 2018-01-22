@@ -16,17 +16,18 @@ void VertexShader::CreateFromHLSLFile(D3DDevice *device, const cstring & filenam
         std::string msg;
         Ext::U16ToU8(filename.c_str(), msg);
         if (errmsg) {
-            msg.append(":Compiler Message:\n");
+            msg.append("VertexShader :Compiler Message:\n");
             msg.append((LPCSTR)errmsg->GetBufferPointer());
             throw ShaderCompileError(msg);
         }
         else {
-            msg.append(":File not found.");
-            throw FileNotFoundException(msg);
+            MAKE_ERRMSG<std::runtime_error>("Fail to Create Shader from hlsl file, Error code:", hr);
         }
     }
     byte_code = sbuffer;
-    device->native_device->CreateVertexShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
+    hr = device->native_device->CreateVertexShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
+    if(FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create VertexShader, Error code:", hr);
 }
 
 void VertexShader::CreateFromBinaryFile(D3DDevice *device, const cstring & filename) {
@@ -39,16 +40,18 @@ void VertexShader::CreateFromString(D3DDevice *device, const std::string & str) 
     if (FAILED(hr)) {
         if (errmsg) {
             std::string msg;
-            msg.append(":Compiler Message:\n");
+            msg.append("VertexShader :Compiler Message:\n");
             msg.append((LPCSTR)errmsg->GetBufferPointer());
             throw ShaderCompileError(msg);
         }
         else {
-            throw std::runtime_error("Unknown error occurred when Compiling shader");
+            MAKE_ERRMSG<std::runtime_error>("Fail to Create Shader from string, Error code:", hr);
         }
     }
     byte_code = sbuffer;
     device->native_device->CreateVertexShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
+    if (FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create VertexShader, Error code:", hr);
 }
 
 void PixelShader::CreateFromHLSLFile(D3DDevice *device, const cstring & filename) {
@@ -66,12 +69,13 @@ void PixelShader::CreateFromHLSLFile(D3DDevice *device, const cstring & filename
             throw ShaderCompileError(msg);
         }
         else {
-            msg.append(":File not found.");
-            throw FileNotFoundException(msg);
+            MAKE_ERRMSG<std::runtime_error>("Fail to Create Shader from hlsl file, Error code:", hr);
         }
     }
     byte_code = sbuffer;
     device->native_device->CreatePixelShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
+    if (FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create PixelShader, Error code:", hr);
 }
 
 void PixelShader::CreateFromBinaryFile(D3DDevice *device, const cstring & filename) {
@@ -89,11 +93,13 @@ void PixelShader::CreateFromString(D3DDevice *device, const std::string & str) {
             throw ShaderCompileError(msg);
         }
         else {
-            throw std::runtime_error("Unknown error occurred when Compiling shader");
+            MAKE_ERRMSG<std::runtime_error>("Fail to Create Shader from string, Error code:", hr);
         }
     }
     byte_code = sbuffer;
     device->native_device->CreatePixelShader(byte_code->GetBufferPointer(), byte_code->GetBufferSize(), 0, &native_shader);
+    if (FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create PixelShader, Error code:", hr);
 }
 
 
@@ -106,15 +112,15 @@ void RenderPipeline::SetInputLayout(D3DDevice *device, const std::string *idents
     }
     HRESULT hr = S_FALSE;
     if (FAILED(hr = device->native_device->CreateInputLayout(ied.data(), count, vshader->byte_code->GetBufferPointer(),
-        vshader->byte_code->GetBufferSize(), &native_input_layout))) {
-        throw std::runtime_error("Failed to create input layout");
+        vshader->byte_code->GetBufferSize(), &native_input_layout))) {    
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create InputLayout, Error code:", hr);
     }
 }
 
 void D3DSampler::CreateState(D3DDevice *device) {
     HRESULT hr = device->native_device->CreateSamplerState(&desc, &native_sampler);
     if(FAILED(hr))
-        throw std::runtime_error("Fail to create sampler state");
+        MAKE_ERRMSG<std::runtime_error>("Fail to Create Sampler State, Error code:", hr);
 }
 
 namespace Ext {

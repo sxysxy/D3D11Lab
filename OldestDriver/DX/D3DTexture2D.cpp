@@ -31,9 +31,10 @@ void D3DTexture2D::Initialize(D3DDevice *device, int w, int h, bool stenciled = 
     td.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     HRESULT hr;
     if (FAILED(hr = device->native_device->CreateTexture2D(&td, nullptr, &native_texture2d))) {
-        throw std::runtime_error("Failed to create Texture2D");
+        MAKE_ERRMSG<std::runtime_error>("Failed to create D3D Texture2D, Error code:", hr);
     }
-    if(stenciled)CreateStencil();
+    if(stenciled)
+        CreateStencil();
 }
 
 void D3DTexture2D::Initialize(D3DDevice *device, const cstring &filename, bool stenciled = false){
@@ -46,7 +47,7 @@ void D3DTexture2D::Initialize(D3DDevice *device, const cstring &filename, bool s
     HRESULT hr;
     if (FAILED(hr = D3DX11CreateTextureFromFileW(device->native_device.Get(), filename.c_str(), &info, nullptr,
         reinterpret_cast<ID3D11Resource **>(native_texture2d.GetAddressOf()), 0))) {
-        throw LoadTextureFailed("Failed to Create Texture2D, Maybe the file does not exist or its format is not supported");
+        MAKE_ERRMSG<LoadTextureFailed>("Failed to create D3D Texture2D from file, Error code:", hr);
     }
     D3D11_TEXTURE2D_DESC desc;
     native_texture2d->GetDesc(&desc);
@@ -58,11 +59,15 @@ void D3DTexture2D::Initialize(D3DDevice *device, const cstring &filename, bool s
 }
 
 void D3DTexture2D::Initialize(ID3D11Texture2D *a_native_object, bool stenciled = false){
-    assert(a_native_object);
+    if(!a_native_object)
+        throw std::invalid_argument("D3DTexture2D::Initialize Invalid Argument: NULL native_object");
 
     ComPtr<ID3D11Device> device;
     native_texture2d = a_native_object;
     native_texture2d->GetDevice(&device);
+    D3D11_TEXTURE2D_DESC desc;
+    a_native_object->GetDesc(&desc);
+    _width = desc.Width, _height = desc.Height;
     CreateViews(device.Get());
     if (stenciled)
         CreateStencil();
@@ -75,13 +80,13 @@ void D3DTexture2D::CreateViews(ID3D11Device *device) {
     if ((desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) &&
         FAILED(hr = device->CreateShaderResourceView(reinterpret_cast<ID3D11Resource *>(native_texture2d.Get()),
         0, &native_shader_resource_view))) {
-        throw std::runtime_error("Failed to Create Texture's Shader Resource View");
+        MAKE_ERRMSG<std::runtime_error>("Failed to create shader resource view, Error code:", hr);
     }
     hr = S_FALSE;
     if ((desc.BindFlags & D3D11_BIND_RENDER_TARGET) &&
         FAILED(hr = device->CreateRenderTargetView(reinterpret_cast<ID3D11Resource *>(native_texture2d.Get()), 0,
         &native_render_target_view))) {
-        throw std::runtime_error("Failed to Create Texture's Render Target View");
+        MAKE_ERRMSG<std::runtime_error>("Failed to create render target view, Error code:", hr);
     }
 }
 
@@ -102,11 +107,11 @@ void D3DTexture2D::CreateStencil() {
     native_texture2d->GetDevice(&device);
     HRESULT hr;
     if (FAILED(hr = device->CreateTexture2D(&td, nullptr, &native_stencil_buffer))) {
-        throw std::runtime_error("Failed to create stencil buffer");
+        MAKE_ERRMSG<std::runtime_error>("Failed to create stencil buffer, Error code:", hr);
     }
     if (FAILED(hr = device->CreateDepthStencilView(native_stencil_buffer.Get(), 0,
         &native_depth_sencil_view))) {
-        throw std::runtime_error("Failed to create depth stencil view");
+        MAKE_ERRMSG<std::runtime_error>("Failed to create depth stencil view, Error code:", hr);
     }
 }
 
@@ -159,6 +164,15 @@ namespace Ext { namespace DX {
             return self;
         }
         
+        static VALUE T2D_width(VALUE self) {
+            auto tex = GetNativeObject<::D3DTexture2D>(self);
+            return INT2FIX(tex->width);
+        }
+        static VALUE T2D_height(VALUE self) {
+            auto tex = GetNativeObject<::D3DTexture2D>(self);
+            return INT2FIX(tex->height);
+        }
+
         static VALUE initialize_D3DTexture(int argc, VALUE *argv, VALUE self) {
             rb_raise(rb_eNotImpError, "class D3DTexture is not implemented.");
             return Qnil;
@@ -171,6 +185,8 @@ namespace Ext { namespace DX {
             klass = rb_define_class_under(module, "D3DTexture2D", klass_D3DTexture);
             rb_define_alloc_func(klass, New);
             rb_define_method(klass, "initialize", (rubyfunc)initialize, -1);
+            rb_define_method(klass, "width", (rubyfunc)T2D_width, 0);
+            rb_define_method(klass, "height", (rubyfunc)T2D_height, 0);
 
             klass_eLoadTextureError = rb_define_class_under(module, "LoadTextureError", rb_eException);
         }

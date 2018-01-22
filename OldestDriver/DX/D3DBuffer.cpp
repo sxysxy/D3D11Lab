@@ -10,15 +10,16 @@ void D3DBuffer::Initialize(D3DDevice *device, size_t sz, UINT flags, void *init_
     RtlZeroMemory(&bd, sizeof bd);
     bd.BindFlags = flags;
     bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sz;
+    bd.ByteWidth = (UINT)sz;
     D3D11_SUBRESOURCE_DATA data;
     if (init_data) {
         RtlZeroMemory(&data, sizeof data);
         data.pSysMem = init_data;
     }
     HRESULT hr = device->native_device->CreateBuffer(&bd, init_data ? &data : nullptr, &native_buffer);
-    if(FAILED(hr))throw std::runtime_error("Failed to create buffer");
-    _size = sz;
+    if(FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Failed to create D3DBuffer, Error code:", hr);
+    _size = (int)sz;
 }
 
 namespace Ext {
@@ -55,7 +56,8 @@ namespace Ext {
                 void *init_data = nullptr;
                 if (argc == 3) {
                     if (rb_obj_is_kind_of(argv[2], rb_cInteger)) {
-                        init_data = (void *)FIX2INT(argv[2]);
+                        init_data = (void *)FIX2PTR(argv[2]);
+                        
                     }
                     else if (rb_obj_is_kind_of(argv[2], rb_cString)) {
                         init_data = (void *)rb_string_value_ptr(&argv[2]);

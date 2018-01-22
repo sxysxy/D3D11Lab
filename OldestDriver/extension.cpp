@@ -39,12 +39,13 @@ namespace Ext {
     VALUE messageloop(VALUE self) {
         MSG msg;
         while(true){
-            if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) > 0) {
+            if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE | PM_NOYIELD)) {
                 if(msg.message == WM_EXITLOOP)break;
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                //DispatchMessage(&msg);
+                ::HFWindow::_WndProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
             }
-            if(rb_block_given_p())rb_yield(Qnil);
+            if(rb_block_given_p())
+                rb_yield(Qnil);
         }
         return Qnil;
     }

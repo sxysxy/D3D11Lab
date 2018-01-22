@@ -10,7 +10,9 @@ D3DDeviceContext::D3DDeviceContext(D3DDevice *device) {
     Initialize(device);
 }
 void D3DDeviceContext::Initialize(D3DDevice *device) {
-    HRCHECK(device->native_device->CreateDeferredContext(0, &native_context), "Failed to create deferred context");
+    HRESULT hr = device->native_device->CreateDeferredContext(0, &native_context);
+    if(FAILED(hr))
+        MAKE_ERRMSG<std::runtime_error>("Fail to create D3DDeviceContext(deferred context), Error code:", hr);
     native_device = device->native_device;
 }
 void D3DDeviceContext::FinishiCommandList() {
@@ -329,7 +331,7 @@ namespace Ext {
                     context->UpdateSubResource(buffer, ptr);
                 }
                 else if (rb_obj_is_kind_of(data, rb_cInteger)) {
-                    context->UpdateSubResource(buffer, (void*)FIX2INT(data));
+                    context->UpdateSubResource(buffer, (void*)FIX2PTR(data));
                 }
                 return self;
             }
